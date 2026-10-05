@@ -1,7 +1,7 @@
 # Báo cáo Chất lượng Dữ liệu – SOP-01
 
 > **Trạm:** KAK | **Loại:** quasi-definitive | **Khoảng:** 2023-01-01 → 2026-03-31
-> Tạo tự động bởi `step3_process.py` ngày 2026-10-05.
+> Tạo tự động bởi `process.py` ngày 2026-10-05.
 
 ---
 
@@ -68,7 +68,7 @@
 
 ### 3.5 Flatline – cờ 5
 
-> Chuỗi hằng số liên tiếp ≥ 10 điểm. **Không xoá; gắn cờ để cảnh báo.**
+> Chuỗi hằng số liên tiếp ≥ 10 điểm. **Không xoá; chưa xác định nguyên nhân, cần kiểm tra trước khi dùng.**
 
 | Cột | Số đoạn (trước) | Dài nhất (trước) | Số điểm bị cờ (sau) | % tổng dòng |
 |---|---|---|---|---|
@@ -84,8 +84,8 @@
 | Mã | Tên | x_nt | y_nt | z_nt | f_nt | Tổng hợp |
 |---|---|---|---|---|---|---|
 | `0` | OK | 1,700,206 | 1,700,047 | 1,697,400 | 1,699,504 | 1,690,346 |
-| `1` | MISSING | 0 | 0 | 0 | 0 | 0 |
-| `2` | SENTINEL | 0 | 0 | 0 | 0 | 0 |
+| `1` | INTERP | 0 | 0 | 0 | 0 | 0 |
+| `2` | MISSING | 0 | 0 | 0 | 0 | 0 |
 | `3` | SPIKE | 7,603 | 7,762 | 8,392 | 7,970 | 15,082 |
 | `4` | OUT_RANGE | 0 | 0 | 0 | 0 | 0 |
 | `5` | FLATLINE | 31 | 31 | 2,048 | 366 | 2,412 |
@@ -96,8 +96,8 @@
 
 - **Phân tích cơ bản:** Dùng `quality_flag == 0` → dữ liệu sạch hoàn toàn.
 - **Phân tích bão từ:** Có thể bao gồm cả cờ 3 (spike) sau khi kiểm tra thủ công.
-- **Mô hình dự báo:** Nên loại cờ 5 (flatline) vì có thể là lỗi thiết bị.
-- **Dashboard Power BI:** Lọc `quality_flag IN (0, 3)` để hiển thị chuỗi đầy đủ với chú thích.
+- **Mô hình dự báo:** Nên xem xét cờ 5 (flatline) vì chưa xác định nguyên nhân.
+- **Dashboard Power BI:** Giữ đầy đủ chuỗi thời gian (không lọc dòng), thay NULL cho điểm cờ 1, 2, 4 nếu cần.
 
 ---
 *Cập nhật lần cuối: 2026-10-05*

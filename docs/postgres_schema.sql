@@ -36,12 +36,12 @@ CREATE TABLE IF NOT EXISTS dim_quality_flag (
 );
 
 INSERT INTO dim_quality_flag VALUES
-    (0, 'OK',           'Giá trị hợp lệ, không vấn đề',                              TRUE),
-    (1, 'MISSING',      'NaN sau reindex – timestamp thiếu trong dữ liệu gốc',        FALSE),
-    (2, 'SENTINEL',     'Giá trị fill (99999.0 / 88888.0) trong file gốc',            FALSE),
-    (3, 'SPIKE',        'Biến thiên đột ngột |diff|>5σ; có thể là bão từ thật',       TRUE),  -- Cân nhắc case-by-case
-    (4, 'OUT_OF_RANGE', 'Ngoài khoảng vật lý hợp lệ',                                FALSE),
-    (5, 'FLATLINE',     'Chuỗi hằng số liên tiếp ≥ 10 phút; nghi lỗi thiết bị',      FALSE);
+    (0, 'OK',           'Giá trị gốc hợp lệ',                                TRUE),
+    (1, 'INTERP',       'Giá trị nội suy tuyến tính (gap ngắn <= 5 phút)',     TRUE),
+    (2, 'MISSING',      'Thiếu dữ liệu / Sentinel (NaN hoặc fill 99999.0)',   FALSE),
+    (3, 'SPIKE',        'Biến thiên đột ngột (|diff| > 5σ); có thể là bão từ', TRUE),
+    (4, 'OUT_OF_RANGE', 'Ngoài khoảng vật lý hợp lệ',                          FALSE),
+    (5, 'FLATLINE',     'Chuỗi hằng số bất thường; chưa xác định nguyên nhân', FALSE);
 
 
 -- ── Bảng fact_measurement (fact) ────────────────────────────
@@ -89,7 +89,7 @@ CREATE INDEX IF NOT EXISTS idx_fact_quality
 
 
 -- ── View tiện dụng cho Power BI ─────────────────────────────
--- Chỉ lấy dữ liệu OK + spike (loại flatline, out-of-range, sentinel)
+-- Đặt giá trị NULL ở cờ 1, 2, 4 nhưng GIỮ NGUYÊN MỌI DÒNG (bảo toàn lưới 1 phút)
 CREATE OR REPLACE VIEW vw_measurement_analysis AS
 SELECT
     f.time_utc,
@@ -97,10 +97,10 @@ SELECT
     s.station_name,
     s.geodetic_lat,
     s.geodetic_lon,
-    f.x_nt,
-    f.y_nt,
-    f.z_nt,
-    f.f_nt,
+    CASE WHEN f.flag_x IN (1, 2, 4) THEN NULL ELSE f.x_nt END AS x_nt,
+    CASE WHEN f.flag_y IN (1, 2, 4) THEN NULL ELSE f.y_nt END AS y_nt,
+    CASE WHEN f.flag_z IN (1, 2, 4) THEN NULL ELSE f.z_nt END AS z_nt,
+    CASE WHEN f.flag_f IN (1, 2, 4) THEN NULL ELSE f.f_nt END AS f_nt,
     f.flag_x,
     f.flag_y,
     f.flag_z,

@@ -29,6 +29,7 @@
 - Ghi chú vào `data_dictionary.md` và `data_quality_report.md`.
 
 
+
 ## 2. Dữ liệu địa chấn USGS (đã cập nhật)
 
 | Thuộc tính | Giá trị |

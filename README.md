@@ -96,6 +96,19 @@ Thay đổi tham số trong [`src/config.py`](src/config.py):
 
 ## Sản phẩm bàn giao
 
-- `data/clean/clean_intermagnet_{STATION}_1min_{START}_{END}.parquet`
-- `docs/data_dictionary.md`
-- `docs/data_quality_report.md`
+### 1. Dữ liệu sạch (`data/clean/`)
+
+- `clean_intermagnet_KAK_1min_20230101_20260331.parquet` – Dữ liệu địa từ trạm KAK 1 phút (1,707,840 dòng, 20.9 MB)
+- `clean_usgs_JP_M4_20230101_20260331.parquet` – Danh mục động đất USGS $M \ge 4.0$ (4,184 sự kiện, 0.27 MB)
+- `clean_usgs_JP_M4_daily_20230101_20260331.parquet` – Bảng tổng hợp động đất theo ngày Daily Summary (1,186 ngày, 23.2 KB)
+
+### 2. Tài liệu & Từ điển dữ liệu (`docs/`)
+
+- [`docs/scope.md`](docs/scope.md) – Phạm vi dataset & lý do chọn trạm KAK
+- [`docs/data_dictionary.md`](docs/data_dictionary.md) – Từ điển dữ liệu địa từ INTERMAGNET KAK
+- [`docs/data_quality_report.md`](docs/data_quality_report.md) – Báo cáo chất lượng dữ liệu KAK trước/sau xử lý
+- [`docs/data_dictionary_usgs.md`](docs/data_dictionary_usgs.md) – Từ điển dữ liệu động đất USGS (Catalog & Daily Summary)
+- [`docs/usgs_quality_report.md`](docs/usgs_quality_report.md) – Báo cáo chất lượng dữ liệu động đất USGS
+- [`docs/postgres_schema.sql`](docs/postgres_schema.sql) – Kịch bản DDL khởi tạo bảng, partition và view PostgreSQL
+- [`docs/handoff_TV2.md`](docs/handoff_TV2.md) – Tài liệu hướng dẫn bàn giao chi tiết cho Database
+

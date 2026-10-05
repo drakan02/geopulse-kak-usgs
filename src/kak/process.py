@@ -27,8 +27,8 @@ import config as cfg
 
 # ── Hằng số bảng mã ───────────────────────────────────────────────────────
 FLAG_OK         = 0
-FLAG_MISSING    = 1
-FLAG_SENTINEL   = 2
+FLAG_INTERP     = 1
+FLAG_MISSING    = 2
 FLAG_SPIKE      = 3
 FLAG_OUT_RANGE  = 4
 FLAG_FLATLINE   = 5
@@ -125,39 +125,33 @@ def step3_process(station: str) -> pd.DataFrame:
         df[fc] = np.int8(FLAG_OK)
 
     # ── 3.3 Gắn cờ theo thứ tự tăng dần (cờ lớn hơn ghi đè) ────────────────
-    # Thứ tự: MISSING → SENTINEL → OUT_OF_RANGE → SPIKE → FLATLINE
-    # (FLATLINE và SPIKE cao nhất, ghi đè các cờ thấp hơn)
+    # Thứ tự: INTERP → MISSING → OUT_OF_RANGE → SPIKE → FLATLINE
     print("\n  Gắn cờ từng thành phần...")
     for col, fcol in COL_MAP.items():
         s = df[col]
 
-        # Cờ 1 – MISSING (NaN sau reindex, hoặc NaN tự nhiên)
-        mask_missing = s.isna()
+        # Cờ 2 – MISSING/SENTINEL (NaN hoặc fill 99999.0 / 88888.0)
+        mask_missing = s.isna() | _flag_sentinel(s)
         df.loc[mask_missing, fcol] = np.int8(FLAG_MISSING)
 
-        # Cờ 2 – SENTINEL (giá trị fill 99999.0 / 88888.0)
-        mask_sent = _flag_sentinel(s)
-        df.loc[mask_sent, fcol] = np.int8(FLAG_SENTINEL)
-
         # Cờ 4 – OUT_OF_RANGE (ngoài khoảng vật lý; không áp vào NaN/sentinel)
-        mask_oor = _flag_out_of_range(s, col) & ~mask_missing & ~mask_sent
+        mask_oor = _flag_out_of_range(s, col) & ~mask_missing
         df.loc[mask_oor, fcol] = np.int8(FLAG_OUT_RANGE)
 
         # Cờ 3 – SPIKE (sau khi đã loại sentinel/NaN; có thể ghi đè OUT_OF_RANGE)
-        mask_spike = _flag_spike(s) & ~mask_missing & ~mask_sent
+        mask_spike = _flag_spike(s) & ~mask_missing
         df.loc[mask_spike, fcol] = np.int8(FLAG_SPIKE)
 
-        # Cờ 5 – FLATLINE (ghi đè mọi cờ thấp hơn, trừ MISSING/SENTINEL)
-        mask_flat = _flag_flatline(s) & ~mask_missing & ~mask_sent
+        # Cờ 5 – FLATLINE (ghi đè mọi cờ thấp hơn, trừ MISSING)
+        mask_flat = _flag_flatline(s) & ~mask_missing
         df.loc[mask_flat, fcol] = np.int8(FLAG_FLATLINE)
 
         n_ok   = int((df[fcol] == FLAG_OK).sum())
         n_miss = int(mask_missing.sum())
-        n_sent = int(mask_sent.sum())
         n_oor  = int(mask_oor.sum())
         n_spk  = int(mask_spike.sum())
         n_flt  = int(mask_flat.sum())
-        print(f"    {col}: OK={n_ok:,} | miss={n_miss} | sent={n_sent} | "
+        print(f"    {col}: OK={n_ok:,} | miss={n_miss} | "
               f"oor={n_oor} | spike={n_spk} ({pct(n_spk,n_after_reindex)}) | "
               f"flat={n_flt} ({pct(n_flt,n_after_reindex)})")
 
@@ -169,20 +163,22 @@ def step3_process(station: str) -> pd.DataFrame:
         df[col] = df[col].where(~_flag_sentinel(df[col]), other=np.nan)
 
     # ── 3.6 Nội suy gap ngắn (≤ INTERP_MAX_GAP phút) ────────────────────────
-    # Chỉ nội suy cột đo lường, không sửa cột cờ
-    # (Nếu không có gap thì vòng này không làm gì)
+    # Chỉ nội suy cột đo lường, chuyển cờ 2 → cờ 1 cho các điểm được nội suy
     n_interp_total = 0
     for col in MEAS_COLS:
+        fcol = COL_MAP[col]
         before = df[col].isna().sum()
-        df[col] = (
+        interpolated = (
             df[col]
             .interpolate(method="linear", limit=cfg.INTERP_MAX_GAP,
                          limit_direction="forward", limit_area="inside")
         )
-        after = df[col].isna().sum()
-        n_filled = int(before - after)
+        newly_filled = df[col].isna() & interpolated.notna()
+        df[col] = interpolated
+        n_filled = int(newly_filled.sum())
         if n_filled > 0:
-            print(f"    Nội suy {col}: {n_filled} điểm (gap ≤ {cfg.INTERP_MAX_GAP} phút)")
+            df.loc[newly_filled & (df[fcol] == FLAG_MISSING), fcol] = np.int8(FLAG_INTERP)
+            print(f"    Nội suy {col}: {n_filled} điểm (gap ≤ {cfg.INTERP_MAX_GAP} phút, chuyển cờ 2 → 1)")
         n_interp_total += n_filled
 
     # ── 3.7 Đúc kiểu dữ liệu xuất ────────────────────────────────────────────
@@ -233,7 +229,7 @@ def assert_post_process(df: pd.DataFrame, station: str):
     # 6. Phân phối cờ tổng hợp
     print(f"\n  Phân phối quality_flag:")
     vc = df["quality_flag"].value_counts().sort_index()
-    names = {0:"OK", 1:"MISSING", 2:"SENTINEL", 3:"SPIKE", 4:"OUT_RANGE", 5:"FLATLINE"}
+    names = {0:"OK", 1:"INTERP", 2:"MISSING", 3:"SPIKE", 4:"OUT_RANGE", 5:"FLATLINE"}
     for code, cnt in vc.items():
         print(f"    {code} ({names.get(code,'?')}): {cnt:,} ({pct(cnt,n)})")
 
@@ -298,14 +294,14 @@ def export_data_dictionary(station: str):
 
 | Mã | Tên | Điều kiện | Ghi chú |
 |---|---|---|---|
-| `0` | OK | Giá trị hợp lệ, không vấn đề | Dùng được trực tiếp |
-| `1` | MISSING | NaN sau reindex (timestamp thiếu trong raw) | Không nội suy nếu gap > {cfg.INTERP_MAX_GAP} phút |
-| `2` | SENTINEL | Giá trị fill ({cfg.SENTINEL_VALUES}) trong file gốc | Giữ lịch sử; giá trị đã thay bằng NaN ở cột đo |
-| `3` | SPIKE | \|diff\| > {cfg.SPIKE_K}σ của diff (sau khi loại sentinel) | **Không xoá**; có thể là biến thiên địa từ thật trong bão từ |
+| `0` | OK | Giá trị gốc hợp lệ | Dùng được trực tiếp |
+| `1` | INTERP | Giá trị nội suy tuyến tính (gap ngắn ≤ {cfg.INTERP_MAX_GAP} phút) | Đã được nội suy từ cờ 2 |
+| `2` | MISSING | Thiếu dữ liệu / Sentinel (NaN hoặc fill {cfg.SENTINEL_VALUES}) | Thay bằng NaN ở cột đo |
+| `3` | SPIKE | |diff| > {cfg.SPIKE_K}σ của diff (sau khi loại sentinel) | **Không xoá**; có thể là biến thiên địa từ thật trong bão từ |
 | `4` | OUT_OF_RANGE | Ngoài khoảng vật lý hợp lệ | Xem `config.PHYSICAL_BOUNDS` |
-| `5` | FLATLINE | ≥ {cfg.FLATLINE_N} điểm liên tiếp cùng giá trị | **Không xoá**; gắn cờ để cảnh báo |
+| `5` | FLATLINE | ≥ {cfg.FLATLINE_N} điểm liên tiếp cùng giá trị | **Không xoá**; chưa xác định nguyên nhân, cần kiểm tra trước khi dùng |
 
-> Nếu một điểm thuộc nhiều loại → cờ LỚN NHẤT được lưu (flatline > out-of-range > spike > sentinel > missing > OK).
+> Nếu một điểm thuộc nhiều loại → cờ LỚN NHẤT được lưu (flatline > out-of-range > spike > missing/sentinel > interp > OK).
 
 ## Khoảng vật lý hợp lệ (PHYSICAL_BOUNDS)
 
@@ -353,7 +349,7 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
     out   = cfg.DOCS_DIR / "data_quality_report.md"
     n     = len(df_clean)
     rb    = qc_before["results"]
-    names = {0:"OK", 1:"MISSING", 2:"SENTINEL", 3:"SPIKE", 4:"OUT_RANGE", 5:"FLATLINE"}
+    names = {0:"OK", 1:"INTERP", 2:"MISSING", 3:"SPIKE", 4:"OUT_RANGE", 5:"FLATLINE"}
 
     def flag_dist(fc):
         vc = df_clean[fc].value_counts().sort_index()
@@ -448,7 +444,7 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
     content += f"""
 ### 3.5 Flatline – cờ 5
 
-> Chuỗi hằng số liên tiếp ≥ {cfg.FLATLINE_N} điểm. **Không xoá; gắn cờ để cảnh báo.**
+> Chuỗi hằng số liên tiếp ≥ {cfg.FLATLINE_N} điểm. **Không xoá; chưa xác định nguyên nhân, cần kiểm tra trước khi dùng.**
 
 | Cột | Số đoạn (trước) | Dài nhất (trước) | Số điểm bị cờ (sau) | % tổng dòng |
 |---|---|---|---|---|
@@ -485,8 +481,8 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
 
 - **Phân tích cơ bản:** Dùng `quality_flag == 0` → dữ liệu sạch hoàn toàn.
 - **Phân tích bão từ:** Có thể bao gồm cả cờ 3 (spike) sau khi kiểm tra thủ công.
-- **Mô hình dự báo:** Nên loại cờ 5 (flatline) vì có thể là lỗi thiết bị.
-- **Dashboard Power BI:** Lọc `quality_flag IN (0, 3)` để hiển thị chuỗi đầy đủ với chú thích.
+- **Mô hình dự báo:** Nên xem xét cờ 5 (flatline) vì chưa xác định nguyên nhân.
+- **Dashboard Power BI:** Giữ đầy đủ chuỗi thời gian (không lọc dòng), thay NULL cho điểm cờ 1, 2, 4 nếu cần.
 
 ---
 *Cập nhật lần cuối: 2026-10-05*

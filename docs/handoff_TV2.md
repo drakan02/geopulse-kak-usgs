@@ -1,9 +1,5 @@
 # Handoff TV2 
-**Phiên bản:** v2 (cập nhật 2026-10-05)  
-**Người bàn giao:** TV1  
-**Người nhận:** TV2 (Database), TV3–TV5 (Analysis)
 
----
 
 ## 1. Tổng quan bàn giao
 
@@ -26,6 +22,9 @@ Tất cả file trong thư mục `data/clean/`.
 **Khoảng:** 2023-01-01T00:00Z → 2026-03-31T23:59Z  
 **SHA-256:** `b1c73b49cab713ebeb5a8de3366f761fe07ddb6d8cca6ded4440acb6dbdbc11f`
 
+> ⚠️ **LƯU Ý QUAN TRỌNG VỀ LƯỚI THỜI GIAN:**
+> Phải **GIỮ ĐỦ 1,707,840 DÒNG**, **KHÔNG ĐƯỢC LỌC/XOÁ DÒNG** (chuỗi thời gian địa từ yêu cầu lưới thời gian 1 phút đều đặn). 
+
 ### Schema
 
 | Cột | Kiểu | Đơn vị | Mô tả |
@@ -42,25 +41,26 @@ Tất cả file trong thư mục `data/clean/`.
 | `flag_f` | int8 | – | Cờ chất lượng riêng f_nt |
 | `quality_flag` | int8 | – | Tổng hợp = max(flag_x, flag_y, flag_z, flag_f) |
 
-### Bảng mã quality_flag
+### Bảng mã quality_flag (đồng bộ SOP-01)
 
-| Mã | Tên | Điều kiện | Trạng thái trong dataset |
+| Mã | Tên | Điều kiện | Trạng thái trong dataset KAK |
 |---|---|---|---|
-| `0` | OK | Hợp lệ | ✅ Sử dụng được |
-| `1` | MISSING | NaN sau reindex | **0 điểm** (không có gap) |
-| `2` | SENTINEL | Giá trị fill 99999 | **0 điểm** (không có sentinel) |
-| `3` | SPIKE | \|diff\| > 5σ | 15,082 điểm (0.88%) – **GIỮ NGUYÊN** |
+| `0` | OK | Giá trị gốc hợp lệ | 1,690,346 điểm (98.98%) – ✅ Sử dụng trực tiếp |
+| `1` | INTERP | Giá trị nội suy (gap ≤ 5 phút) | **0 điểm** (không có gap ngắn) |
+| `2` | MISSING | Thiếu dữ liệu / Fill 99999 | **0 điểm** (không có missing/sentinel) |
+| `3` | SPIKE | \|diff\| > 5σ | 15,082 điểm (0.88%) – **GIỮ NGUYÊN DÒNG** |
 | `4` | OUT_OF_RANGE | Ngoài khoảng vật lý | **0 điểm** |
-| `5` | FLATLINE | ≥10 điểm cùng giá trị | 2,412 điểm (0.14%) – **GIỮ NGUYÊN** |
+| `5` | FLATLINE | ≥ 10 điểm cùng giá trị | 2,412 điểm (0.14%) – **GIỮ NGUYÊN DÒNG** |
 
-> **Ưu tiên cờ:** flatline (5) > out-of-range (4) > spike (3) > sentinel (2) > missing (1) > OK (0)  
+> **Thứ tự ưu tiên cờ:** flatline (5) > out-of-range (4) > spike (3) > missing/sentinel (2) > interp (1) > OK (0)  
 > `quality_flag = max(flag_x, flag_y, flag_z, flag_f)`
 
 ### ⚠️ Cảnh báo quan trọng
 
-- **Spike (cờ 3) KHÔNG bị xoá.** Một phần có thể là biến thiên địa từ thật trong bão từ địa vật lý. TV3/TV5 cần phân tích trước khi quyết định xử lý.
-- **Flatline (cờ 5)** tập trung ở z_nt (2,048 điểm). Nghi ngờ lỗi logger — kiểm tra trước khi dùng.
-- Chuỗi **hoàn toàn không có gap** (0 NaN sau reindex). Không nội suy nào được thực hiện.
+- **Giữ nguyên 100% số dòng dữ liệu (1,707,840 dòng):** Không xóa bất kỳ dòng nào để đảm bảo tính liên tục của lưới thời gian 1 phút.
+- **Spike (cờ 3) KHÔNG bị xoá.** Một phần có thể là biến thiên địa từ thật trong bão từ địa vật lý. Cần phân tích trước khi quyết định xử lý.
+- **Flatline (cờ 5)** tập trung ở z_nt (2,048 điểm). Chưa xác định nguyên nhân, cần kiểm tra trước khi dùng.
+- Chuỗi **hoàn toàn không có gap** (0 NaN sau reindex trong dữ liệu gốc KAK quasi-def).
 
 ---
 
@@ -71,25 +71,33 @@ Tất cả file trong thư mục `data/clean/`.
 **Khoảng:** 2023-01-01T00:00Z → 2026-03-31 (query đến 2026-04-01T00:00Z)  
 **SHA-256:** `a02c8d5b326c585c3e0655626b0f3955cab9987ea69773b0452759274d28c712`
 
-### Schema
+### Schema (Đầy đủ 23 cột đối chiếu 1:1 với file Parquet)
 
-| Cột | Kiểu | Đơn vị | Mô tả |
-|---|---|---|---|
-| `event_id` | str | – | ID USGS (ví dụ: `us7000lz5b`) |
-| `time_utc` | datetime64[us, UTC] | – | Thời điểm sự kiện (UTC) |
-| `updated_utc` | datetime64[us, UTC] | – | Lần cập nhật cuối |
-| `latitude` | float32 | °N | Vĩ độ |
-| `longitude` | float32 | °E | Kinh độ |
-| `depth_km` | float32 | km | Độ sâu |
-| `mag` | float32 | – | Độ lớn |
-| `mag_type` | category | – | Thang đo: mb/mww/mwr/mwb |
-| `place` | str | – | Mô tả vị trí (văn bản tự do USGS) |
-| `event_type` | category | – | Luôn = `earthquake` |
-| `status` | category | – | Luôn = `reviewed` |
-| `region` | category | – | Phân vùng gần đúng từ place |
-| `nst`, `gap_deg`, `dmin_deg`, `rms` | float/int | – | Chỉ số tin cậy định vị (ít dùng) |
-| `net`, `location_source`, `mag_source` | str | – | Mạng lưới nguồn (ít dùng) |
-| `horizontal_error_km`, `depth_error_km`, `mag_error`, `mag_nst` | float | – | Sai số (ít dùng) |
+| Cột | Kiểu Parquet | Kiểu SQL gợi ý | Đơn vị | Mô tả & Giá trị |
+|---|---|---|---|---|
+| `event_id` | str | TEXT / VARCHAR(50) | – | ID USGS duy nhất (PK) |
+| `time_utc` | datetime64[us, UTC] | TIMESTAMPTZ | – | Thời điểm sự kiện (UTC) |
+| `updated_utc` | datetime64[us, UTC] | TIMESTAMPTZ | – | Thời điểm cập nhật cuối |
+| `latitude` | float32 | REAL | °N | Vĩ độ (min=24.00, max=45.92) |
+| `longitude` | float32 | REAL | °E | Kinh độ (min=122.01, max=149.93) |
+| `depth_km` | float32 | REAL | km | Độ sâu (min=2.29, max=644.88) |
+| `mag` | float32 | REAL | – | Độ lớn (min=4.0, max=7.6) |
+| `mag_type` | category | VARCHAR(10) | – | Thang đo (mb/mww/mwr/mwb) |
+| `place` | str | TEXT | – | Mô tả vị trí từ USGS |
+| `event_type` | category | VARCHAR(20) | – | Loại sự kiện (luôn = `earthquake`) |
+| `status` | category | VARCHAR(20) | – | Trạng thái (luôn = `reviewed`) |
+| `region` | category | VARCHAR(20) | – | Phân vùng gần đúng từ place |
+| `nst` | int64 | INTEGER | – | Số trạm định vị (min=8, max=619) |
+| `gap_deg` | int64 | INTEGER | ° | Góc azimuth trạm (min=9, max=249) |
+| `dmin_deg` | float64 | REAL | ° | Khoảng cách trạm gần nhất (min=0.065, max=44.036) |
+| `rms` | float64 | REAL | s | RMS residual (min=0.19, max=1.44) |
+| `net` | str | VARCHAR(10) | – | Mạng lưới báo cáo (ví dụ: `us`) |
+| `horizontal_error_km` | float64 | REAL | km | Sai số ngang (min=1.03, max=19.8) |
+| `depth_error_km` | float64 | REAL | km | Sai số độ sâu (min=0.814, max=25.32) |
+| `mag_error` | float64 | REAL | – | Sai số magnitude (min=0.019, max=0.37) |
+| `mag_nst` | int64 | INTEGER | – | Số trạm tính magnitude (min=2, max=884) |
+| `location_source` | str | VARCHAR(10) | – | Nguồn định vị |
+| `mag_source` | str | VARCHAR(10) | – | Nguồn magnitude |
 
 ### Bảng mã region (gần đúng)
 
@@ -148,7 +156,7 @@ Tất cả file trong thư mục `data/clean/`.
 
 ---
 
-## 5. Gợi ý PostgreSQL
+## 5. Gợi ý PostgreSQL DDL
 
 ```sql
 -- ══════════════════════════════════════════════════════════════
@@ -179,17 +187,28 @@ CREATE TABLE fact_kak_1min_2025 PARTITION OF fact_kak_1min
 CREATE TABLE fact_kak_1min_2026 PARTITION OF fact_kak_1min
     FOR VALUES FROM ('2026-01-01') TO ('2027-01-01');
 
--- Index hỗ trợ query theo thời gian + cờ
-CREATE INDEX ON fact_kak_1min (time_utc);
+-- Index hỗ trợ query theo cờ khác 0 (Lưu ý: PRIMARY KEY đã tự động tạo index trên (time_utc, station))
 CREATE INDEX ON fact_kak_1min (quality_flag) WHERE quality_flag > 0;
 
--- View tiện dùng: chỉ lấy điểm OK
-CREATE VIEW vw_kak_clean AS
-    SELECT * FROM fact_kak_1min WHERE quality_flag = 0;
+-- View tiện dùng: Đặt giá trị NULL chỉ ở các cờ 1, 2, 4 nhưng GIỮ NGUYÊN MỌI DÒNG (bảo toàn lưới 1 phút)
+CREATE OR REPLACE VIEW vw_kak_cleaned_signal AS
+SELECT
+    time_utc,
+    station,
+    CASE WHEN flag_x IN (1, 2, 4) THEN NULL ELSE x_nt END AS x_nt,
+    CASE WHEN flag_y IN (1, 2, 4) THEN NULL ELSE y_nt END AS y_nt,
+    CASE WHEN flag_z IN (1, 2, 4) THEN NULL ELSE z_nt END AS z_nt,
+    CASE WHEN flag_f IN (1, 2, 4) THEN NULL ELSE f_nt END AS f_nt,
+    flag_x,
+    flag_y,
+    flag_z,
+    flag_f,
+    quality_flag
+FROM fact_kak_1min;
 
 
 -- ══════════════════════════════════════════════════════════════
--- Bảng 2: USGS events
+-- Bảng 2: USGS events (Đầy đủ 23 cột khớp Parquet)
 -- ══════════════════════════════════════════════════════════════
 CREATE TABLE fact_usgs_event (
     event_id            TEXT        PRIMARY KEY,
@@ -201,15 +220,20 @@ CREATE TABLE fact_usgs_event (
     mag                 REAL        NOT NULL,
     mag_type            VARCHAR(10),
     place               TEXT,
-    region              VARCHAR(20),     -- Japan / Kuril-Russia / Taiwan / other
+    event_type          VARCHAR(20),
     status              VARCHAR(20),
-    -- Chỉ số tin cậy định vị (giữ để kiểm tra chất lượng)
-    nst                 SMALLINT,
-    gap_deg             SMALLINT,
+    region              VARCHAR(20),     -- Japan / Kuril-Russia / Taiwan / other
+    nst                 INTEGER,         -- Phù hợp dữ liệu min=8, max=619
+    gap_deg             INTEGER,         -- Phù hợp dữ liệu min=9, max=249
+    dmin_deg            REAL,            -- Min=0.065, max=44.036
     rms                 REAL,
+    net                 VARCHAR(10),
     horizontal_error_km REAL,
     depth_error_km      REAL,
-    mag_error           REAL
+    mag_error           REAL,
+    mag_nst             INTEGER,
+    location_source     VARCHAR(10),
+    mag_source          VARCHAR(10)
 );
 
 CREATE INDEX ON fact_usgs_event (time_utc);
@@ -230,7 +254,7 @@ CREATE TABLE fact_usgs_daily (
 );
 
 -- ══════════════════════════════════════════════════════════════
--- Bảng dimension tham khảo
+-- Bảng dimension tham khảo (đồng bộ SOP-01)
 -- ══════════════════════════════════════════════════════════════
 CREATE TABLE dim_quality_flag (
     code        SMALLINT PRIMARY KEY,
@@ -239,12 +263,12 @@ CREATE TABLE dim_quality_flag (
     is_usable   BOOLEAN
 );
 INSERT INTO dim_quality_flag VALUES
-    (0, 'OK',          'Giá trị gốc hợp lệ',                        TRUE),
-    (1, 'MISSING',     'NaN sau reindex (gap)',                       FALSE),
-    (2, 'SENTINEL',    'Fill value (99999)',                          FALSE),
-    (3, 'SPIKE',       'Biến thiên đột ngột – GIỮ NGUYÊN',           TRUE),
-    (4, 'OUT_OF_RANGE','Ngoài khoảng vật lý',                        FALSE),
-    (5, 'FLATLINE',    'Chuỗi hằng số bất thường – GIỮ NGUYÊN',      TRUE);
+    (0, 'OK',          'Giá trị gốc hợp lệ',                                TRUE),
+    (1, 'INTERP',      'Giá trị nội suy tuyến tính (gap ngắn <= 5 phút)',     TRUE),
+    (2, 'MISSING',     'Thiếu dữ liệu / Sentinel (NaN hoặc fill 99999.0)',   FALSE),
+    (3, 'SPIKE',       'Biến thiên đột ngột (|diff| > 5σ); có thể là bão từ', TRUE),
+    (4, 'OUT_OF_RANGE','Ngoài khoảng vật lý hợp lệ',                          FALSE),
+    (5, 'FLATLINE',    'Chuỗi hằng số bất thường; chưa xác định nguyên nhân', FALSE);
 
 CREATE TABLE dim_region (
     region      VARCHAR(20) PRIMARY KEY,
@@ -260,51 +284,43 @@ INSERT INTO dim_region VALUES
 
 ---
 
-## 6. Cách đọc file Parquet
+## 6. Cách đọc file Parquet (Python)
 
 ```python
 import pandas as pd
 
-# KAK 1 phút
+# 1. KAK 1 phút: Giữ NGUYÊN 1,707,840 dòng (KHÔNG dùng drop/lọc dòng để đảm bảo lưới thời gian đều 1 phút)
 kak = pd.read_parquet("data/clean/clean_intermagnet_KAK_1min_20230101_20260331.parquet")
-kak_clean = kak[kak["quality_flag"] == 0]   # chỉ lấy OK
 
-# USGS events
+# Ví dụ khi cần thay thế các điểm lỗi (cờ 1, 2, 4) bằng NaN mà vẫn giữ đủ 1,707,840 dòng:
+# mask_bad = kak["quality_flag"].isin([1, 2, 4])
+# kak.loc[mask_bad, ["x_nt", "y_nt", "z_nt", "f_nt"]] = None
+
+# 2. USGS events (4,184 sự kiện)
 usgs = pd.read_parquet("data/clean/clean_usgs_JP_M4_20230101_20260331.parquet")
 usgs_japan = usgs[usgs["region"] == "Japan"]
 
-# Daily summary
+# 3. Daily summary (1,186 ngày)
 daily = pd.read_parquet("data/clean/clean_usgs_JP_M4_daily_20230101_20260331.parquet")
 ```
 
 ---
 
-## 7. Chia sẻ file Parquet (đề xuất)
+## 7. Phương án chia sẻ file Parquet
 
-| Phương án | Ưu điểm | Nhược điểm | Khuyến nghị |
-|---|---|---|---|
-| **Git LFS** | Tích hợp Git, version control | Cần cài `git lfs`, quota | ✅ KAK (20.9 MB) |
-| **Thư mục chia sẻ (NAS/Drive)** | Đơn giản, không giới hạn | Không version control | ✅ Backup |
-| **DVC** | Version control + remote storage | Cần cài thêm | Tốt cho dài hạn |
+**Quyết định chia sẻ:** Toàn bộ 3 file Parquet làm sạch được lưu trực tiếp trong thư mục `data/clean/` và commit lên kho chứa Git (tổng dung lượng ~21.2 MB, nằm dưới ngưỡng giới hạn 100 MB của GitHub).
 
-**Trước mắt:** Commit `data/clean/*.parquet` vào Git (tổng ~21.2 MB, dưới giới hạn GitHub 100 MB). Nếu thêm trạm sau, chuyển sang **Git LFS** hoặc **DVC**.
-
-```bash
-# Cài Git LFS (khi cần)
-git lfs install
-git lfs track "data/clean/*.parquet"
-git add .gitattributes data/clean/
-git commit -m "feat: add clean Parquet files via LFS"
-```
+Chỉ cần thực hiện `git pull` để nhận toàn bộ file dữ liệu sạch mà không cần cài đặt thêm công cụ lưu trữ bên ngoài.
 
 ---
 
-## 8. Lưu ý cho TV2 (Database)
+## 8. Lưu ý cho Database
 
 1. **Cột region** là phân loại gần đúng — không dùng làm khoá nghiệp vụ chính xác.
 2. **Spike KAK (cờ 3)** có thể là biến thiên địa từ thật — **không xoá** khi nạp DB.
-3. **Ngày đột biến USGS** (2024-01-01: 64 SĐ) là dữ liệu thật do chuỗi dư chấn — không lọc.
-4. **dominant_magtype và max_mag** trong daily summary trộn mb + Mw — ghi chú này vào tooltip Power BI.
-5. Khi nạp vào PostgreSQL, giữ nguyên kiểu `TIMESTAMPTZ` và **không chuyển về giờ địa phương**.
+3. **Flatline KAK (cờ 5)** tập trung ở z_nt — chưa xác định nguyên nhân, cần kiểm tra trước khi dùng trong mô hình.
+4. **Ngày đột biến USGS** (2024-01-01: 64 SĐ) là dữ liệu thật do chuỗi dư chấn — không lọc.
+5. **dominant_magtype và max_mag** trong daily summary trộn mb + Mw — ghi chú này vào tooltip Power BI.
+6. Khi nạp vào PostgreSQL, giữ nguyên kiểu `TIMESTAMPTZ` và **không chuyển về giờ địa phương**.
 
 ---

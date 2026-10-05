@@ -1,7 +1,7 @@
 # Báo cáo Chất lượng – USGS Earthquake Catalog
 
 > Trạm: KAK region (Japan & lân cận) | Khoảng: 2023-01-01 → 2026-03-31
-> Tạo bởi `usgs_phase2.py` ngày 2026-10-04.
+> Tạo bởi `clean_catalog.py` ngày 2026-10-04.
 
 ---
 
@@ -132,7 +132,7 @@
 | Assert n_events_m5plus | sum = 426 ✅ |
 | Ngày 0 sự kiện | 86 (max_mag/dominant_magtype/mean_depth_km = NULL) ✅ |
 | Ngày nhiều nhất | 64 sự kiện |
-| Tạo lúc | 2026-10-04 |
+| Tạo lúc | 2026-10-05 |
 
 ### Top 5 ngày nhiều sự kiện nhất
 
@@ -148,4 +148,4 @@
 > nhận biết các ngày này khi diễn giải xu hướng.
 
 ---
-*Cập nhật: 2026-10-04*
+*Cập nhật: 2026-10-05*

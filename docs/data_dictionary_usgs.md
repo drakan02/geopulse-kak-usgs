@@ -1,6 +1,6 @@
 # Data Dictionary – USGS Earthquake Catalog
 
-> Tạo tự động bởi `usgs_phase2.py`. Cập nhật khi schema thay đổi.
+> Tạo tự động bởi `clean_catalog.py`. Cập nhật khi schema thay đổi.
 
 ## File sản phẩm
 
@@ -164,7 +164,7 @@ Phần lớn không dùng trong dashboard Power BI thông thường:
 | sum(n_events_m5plus) | 426 (sự kiện M≥5.0) |
 | Ngày 0 sự kiện | 86 |
 | Ngày nhiều nhất | 64 sự kiện |
-| Ngày tải | 2026-10-04 |
+| Ngày tải | 2026-10-05 |
 
 ## Cột thô USGS (ít dùng trực tiếp)
 
@@ -188,4 +188,4 @@ Phần lớn không dùng trong dashboard Power BI thông thường:
 | `updated_utc` | Timestamp cập nhật cuối – dùng để dedup, không cần cho analysis |
 
 ---
-*Cập nhật: 2026-10-04*
+*Cập nhật: 2026-10-05*
