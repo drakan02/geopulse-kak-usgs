@@ -195,12 +195,12 @@ USGS_CSV_RENAME = {
 
 def load_usgs_csv() -> pd.DataFrame:
     """
-    Nạp tất cả file usgs_earthquake_*.csv trong data/raw/usgs/.
+    Nạp tất cả file usgs_*.csv trong data/raw/usgs/.
     Trả DataFrame đã chuẩn hoá: time_utc là datetime64[ns, UTC].
     Sentinel: không có sentinel rõ ràng trong USGS CSV (dùng NaN tự nhiên).
     """
     raw_dir = cfg.DATA_RAW / "usgs"
-    files = sorted(raw_dir.glob("usgs_earthquake_*.csv"))
+    files = sorted(raw_dir.glob("usgs_*.csv"))
     if not files:
         raise FileNotFoundError(f"Không tìm thấy file USGS CSV trong {raw_dir}")
 
@@ -215,9 +215,13 @@ def load_usgs_csv() -> pd.DataFrame:
     df = df.rename(columns={k: v for k, v in USGS_CSV_RENAME.items() if k in df.columns})
 
     # Chuyển timestamp
-    if "time_utc" in df.columns:
+    if "time" in df.columns and "time_utc" not in df.columns:
+        df["time_utc"] = pd.to_datetime(df["time"], utc=True)
+    elif "time_utc" in df.columns:
         df["time_utc"] = pd.to_datetime(df["time_utc"], utc=True)
-    if "updated_utc" in df.columns:
+    if "updated" in df.columns and "updated_utc" not in df.columns:
+        df["updated_utc"] = pd.to_datetime(df["updated"], utc=True)
+    elif "updated_utc" in df.columns:
         df["updated_utc"] = pd.to_datetime(df["updated_utc"], utc=True)
 
     df = df.sort_values("time_utc").reset_index(drop=True)
@@ -230,11 +234,11 @@ def load_usgs_csv() -> pd.DataFrame:
 
 def load_usgs_geojson() -> pd.DataFrame:
     """
-    Nạp tất cả file usgs_earthquake_*.geojson trong data/raw/usgs/.
+    Nạp tất cả file usgs_*.geojson trong data/raw/usgs/.
     Trả DataFrame phẳng với cùng schema như load_usgs_csv().
     """
     raw_dir = cfg.DATA_RAW / "usgs"
-    files = sorted(raw_dir.glob("usgs_earthquake_*.geojson"))
+    files = sorted(raw_dir.glob("usgs_*.geojson"))
     if not files:
         raise FileNotFoundError(f"Không tìm thấy file USGS GeoJSON trong {raw_dir}")
 

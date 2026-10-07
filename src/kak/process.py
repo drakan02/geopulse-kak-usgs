@@ -17,6 +17,7 @@ Thực thi:
 
 import sys
 import pickle
+from datetime import datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -68,15 +69,10 @@ def _flag_flatline(series: pd.Series) -> pd.Series:
     Bỏ qua NaN và sentinel.
     """
     clean = series.where(~_flag_sentinel(series), other=np.nan)
-    mask  = pd.Series(False, index=series.index)
-    if clean.isna().all():
-        return mask
-    # Xác định run-length encoding
-    run_id = (clean != clean.shift()).cumsum()
-    for rid, grp in clean.groupby(run_id):
-        if grp.notna().all() and len(grp) >= cfg.FLATLINE_N:
-            mask.loc[grp.index] = True
-    return mask
+    not_null = clean.notna()
+    runs = (clean != clean.shift()).cumsum()
+    run_len = clean.groupby(runs).transform("count")
+    return not_null & (run_len >= cfg.FLATLINE_N)
 
 
 def _flag_out_of_range(series: pd.Series, col: str) -> pd.Series:
@@ -267,78 +263,99 @@ def export_data_dictionary(station: str):
     out_dir = cfg.DOCS_DIR / "kak"
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "data_dictionary.md"
-    content = f"""# Data Dictionary – SOP-01 Geophysical Data Pipeline
+    now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-> Tạo tự động bởi `process.py`. Cập nhật khi schema thay đổi.
+    content = f"""# Từ điển Dữ liệu – SOP-01 Geophysical Data Pipeline
 
-## File sản phẩm
-
-`data/clean/clean_intermagnet_{{STATION}}_1min_{{start}}_{{end}}.parquet`
-
-## Schema cột
-
-| Cột | Kiểu | Đơn vị | Mô tả |
-|---|---|---|---|
-| `time_utc` | `datetime64[us, UTC]` | – | Dấu thời gian UTC, ISO 8601, bắt đầu mỗi phút |
-| `station` | `category` | – | Mã IAGA 3 ký tự (ví dụ: `KAK`) |
-| `x_nt` | `float32` | nT | Thành phần X (Bắc). Sentinel → NaN. Giá trị thật giữ nguyên |
-| `y_nt` | `float32` | nT | Thành phần Y (Đông). Sentinel → NaN |
-| `z_nt` | `float32` | nT | Thành phần Z (Thẳng đứng, xuống). Sentinel → NaN |
-| `f_nt` | `float32` | nT | Cường độ toàn phần F. Sentinel → NaN |
-| `flag_x` | `int8` | – | Cờ chất lượng riêng cho x_nt (xem bảng mã) |
-| `flag_y` | `int8` | – | Cờ chất lượng riêng cho y_nt |
-| `flag_z` | `int8` | – | Cờ chất lượng riêng cho z_nt |
-| `flag_f` | `int8` | – | Cờ chất lượng riêng cho f_nt |
-| `quality_flag` | `int8` | – | Cờ tổng hợp = max(flag_x, flag_y, flag_z, flag_f) |
-
-## Bảng mã quality_flag
-
-| Mã | Tên | Điều kiện | Ghi chú |
-|---|---|---|---|
-| `0` | OK | Giá trị gốc hợp lệ | Dùng được trực tiếp |
-| `1` | INTERP | Giá trị nội suy tuyến tính (gap ngắn ≤ {cfg.INTERP_MAX_GAP} phút) | Đã được nội suy từ cờ 2 |
-| `2` | MISSING | Thiếu dữ liệu / Sentinel (NaN hoặc fill {cfg.SENTINEL_VALUES}) | Thay bằng NaN ở cột đo |
-| `3` | SPIKE | |diff| > {cfg.SPIKE_K}σ của diff (sau khi loại sentinel) | **Không xoá**; có thể là biến thiên địa từ thật trong bão từ |
-| `4` | OUT_OF_RANGE | Ngoài khoảng vật lý hợp lệ | Xem `config.PHYSICAL_BOUNDS` |
-| `5` | FLATLINE | ≥ {cfg.FLATLINE_N} điểm liên tiếp cùng giá trị | **Không xoá**; chưa xác định nguyên nhân, cần kiểm tra trước khi dùng |
-
-> Nếu một điểm thuộc nhiều loại → cờ LỚN NHẤT được lưu (flatline > out-of-range > spike > missing/sentinel > interp > OK).
-
-## Khoảng vật lý hợp lệ (PHYSICAL_BOUNDS)
-
-Nguồn: INTERMAGNET technical guide + WMM khu vực KAK (~36.2°N, 140.2°E)
-
-| Cột | Min (nT) | Max (nT) |
-|---|---|---|
-| x_nt | {cfg.PHYSICAL_BOUNDS['x_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['x_nt'][1]:,} |
-| y_nt | {cfg.PHYSICAL_BOUNDS['y_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['y_nt'][1]:,} |
-| z_nt | {cfg.PHYSICAL_BOUNDS['z_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['z_nt'][1]:,} |
-| f_nt | {cfg.PHYSICAL_BOUNDS['f_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['f_nt'][1]:,} |
-
-## Ngưỡng kiểm tra chất lượng
-
-| Tham số | Giá trị |
-|---|---|
-| Sentinel | {cfg.SENTINEL_VALUES} |
-| SPIKE_K | {cfg.SPIKE_K}σ |
-| FLATLINE_N | {cfg.FLATLINE_N} điểm liên tiếp |
-| INTERP_MAX_GAP | {cfg.INTERP_MAX_GAP} phút |
-
-## Nguồn dữ liệu
-
-| Trường | Giá trị |
-|---|---|
-| Trạm | {cfg.STATIONS} |
-| Loại | {cfg.DATA_TYPE} |
-| Khoảng | {cfg.DATE_START} → {cfg.DATE_END} |
-| HAPI dataset | `{cfg.INTERMAGNET_HAPI_DATASET.format(station_lower=station.lower())}` |
-| HAPI URL | `{cfg.INTERMAGNET_HAPI_BASE}` |
+> Thời điểm tạo báo cáo: {now_str} UTC  
+> Nguồn dữ liệu: INTERMAGNET HAPI (Trạm KAK - Kakioka, Nhật Bản | 36.232° N, 140.186° E) + Danh mục Động đất USGS  
+> Khoảng thời gian: {cfg.DATE_START} đến {cfg.DATE_END}  
 
 ---
-*Cập nhật lần cuối: 2026-10-05*
+
+## 1. Thông số Sản phẩm File
+
+| Thuộc tính | Quy cách kỹ thuật |
+|---|---|
+| Mẫu tên file | `clean_intermagnet_{station}_1min_{cfg.DATE_START.strftime('%Y%m%d')}_{cfg.DATE_END.strftime('%Y%m%d')}.parquet` |
+| Định dạng lưu trữ | Apache Parquet (Nén Snappy, Engine PyArrow) |
+| Lưới thời gian | Lưới 1 phút liên tục (ISO 8601 UTC) |
+| Tổng số dòng kỳ vọng | 1,707,840 bản ghi |
+
+---
+
+## 2. Schema Cột Dữ liệu
+
+| Cột | Kiểu dữ liệu | Đơn vị | Mô tả | Khoảng hợp lệ / Định dạng | Ghi chú |
+|---|---|---|---|---|---|
+| `time_utc` | `datetime64[us, UTC]` | - | Mốc thời gian UTC, độ phân giải 1 phút | ISO 8601 UTC | Khóa chính; tăng đơn điệu, không trùng lặp |
+| `station` | `category` | - | Mã trạm IAGA 3 ký tự | `KAK` | Nguồn: Header IAGA-2002 |
+| `x_nt` | `float32` | nT | Thành phần địa từ X (hướng Bắc) | {cfg.PHYSICAL_BOUNDS['x_nt'][0]:,} đến {cfg.PHYSICAL_BOUNDS['x_nt'][1]:,} nT | Sentinel 99999.00 / 88888.00 thay bằng NaN |
+| `y_nt` | `float32` | nT | Thành phần địa từ Y (hướng Đông) | {cfg.PHYSICAL_BOUNDS['y_nt'][0]:,} đến {cfg.PHYSICAL_BOUNDS['y_nt'][1]:,} nT | Sentinel 99999.00 / 88888.00 thay bằng NaN |
+| `z_nt` | `float32` | nT | Thành phần địa từ Z (hướng xuống) | {cfg.PHYSICAL_BOUNDS['z_nt'][0]:,} đến {cfg.PHYSICAL_BOUNDS['z_nt'][1]:,} nT | Sentinel 99999.00 / 88888.00 thay bằng NaN |
+| `f_nt` | `float32` | nT | Cường độ từ trường tổng F | {cfg.PHYSICAL_BOUNDS['f_nt'][0]:,} đến {cfg.PHYSICAL_BOUNDS['f_nt'][1]:,} nT | Sentinel 99999.00 / 88888.00 thay bằng NaN |
+| `flag_x` | `int8` | - | Cờ chất lượng cho thành phần x_nt | 0 đến 5 | Xem chi tiết bảng mã cờ chất lượng |
+| `flag_y` | `int8` | - | Cờ chất lượng cho thành phần y_nt | 0 đến 5 | Xem chi tiết bảng mã cờ chất lượng |
+| `flag_z` | `int8` | - | Cờ chất lượng cho thành phần z_nt | 0 đến 5 | Xem chi tiết bảng mã cờ chất lượng |
+| `flag_f` | `int8` | - | Cờ chất lượng cho thành phần f_nt | 0 đến 5 | Xem chi tiết bảng mã cờ chất lượng |
+| `quality_flag` | `int8` | - | Cờ tổng hợp = max(flag_x, flag_y, flag_z, flag_f) | 0 đến 5 | Đại diện cho mức độ bất thường cao nhất |
+
+---
+
+## 3. Phân loại Cờ Chất lượng (Quality Flag)
+
+| Mã cờ | Tên cờ | Điều kiện phát hiện | Quy tắc xử lý | Độ ưu tiên |
+|---|---|---|---|---|
+| `0` | OK | Giá trị đo gốc hợp lệ | Giữ nguyên dữ liệu cho phân tích | 0 (Thấp nhất) |
+| `1` | INTERP | Nội suy tuyến tính (gap <= {cfg.INTERP_MAX_GAP} phút) | Điền giá trị nội suy từ 2 biên gap | 1 |
+| `2` | MISSING | Thiếu dữ liệu hoặc sentinel ({cfg.SENTINEL_VALUES}) | Gắn giá trị đo thành NaN | 2 |
+| `3` | SPIKE | Spike biến thiên thống kê (|diff| > {cfg.SPIKE_K}*std) | Chỉ gắn cờ; giữ nguyên giá trị đo gốc | 3 |
+| `4` | OUT_OF_RANGE | Vi phạm ngưỡng vật lý hợp lệ | Chỉ gắn cờ; giữ nguyên giá trị đo gốc | 4 |
+| `5` | FLATLINE | Chuỗi hằng số liên tiếp >= {cfg.FLATLINE_N} điểm | Chỉ gắn cờ; nghi ngờ lỗi cảm biến | 5 (Cao nhất) |
+
+Ghi chú: Nếu một điểm đo vi phạm nhiều điều kiện, mã cờ có số lớn nhất sẽ được lưu.
+
+---
+
+## 4. Ngưỡng Vật lý Hợp lệ (Mô hình WMM cho Trạm KAK, Nhật Bản)
+
+Tham chiếu: Mô hình Từ trường Thế giới (WMM2020) và Tài liệu Kỹ thuật INTERMAGNET cho Đài thiên văn Kakioka (36.232° N, 140.186° E, Độ cao: 36m).
+
+| Thành phần | Min (nT) | Max (nT) | Baseline tiêu biểu KAK | Cơ sở tham chiếu |
+|---|---|---|---|---|
+| `x_nt` | {cfg.PHYSICAL_BOUNDS['x_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['x_nt'][1]:,} | ~29,500 nT | Ngưỡng trường khu vực WMM2020 (Kakioka, Nhật Bản) |
+| `y_nt` | {cfg.PHYSICAL_BOUNDS['y_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['y_nt'][1]:,} | ~-3,100 nT | Ngưỡng trường khu vực WMM2020 (Kakioka, Nhật Bản) |
+| `z_nt` | {cfg.PHYSICAL_BOUNDS['z_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['z_nt'][1]:,} | ~35,800 nT | Ngưỡng trường khu vực WMM2020 (Kakioka, Nhật Bản) |
+| `f_nt` | {cfg.PHYSICAL_BOUNDS['f_nt'][0]:,} | {cfg.PHYSICAL_BOUNDS['f_nt'][1]:,} | ~46,500 nT | Ngưỡng trường khu vực WMM2020 (Kakioka, Nhật Bản) |
+
+---
+
+## 5. Tham số Ngưỡng Kiểm tra Chất lượng
+
+| Tham số | Tên biến cấu hình | Giá trị cấu hình | Ý nghĩa vận hành |
+|---|---|---|---|
+| Giá trị Sentinel | `SENTINEL_VALUES` | {cfg.SENTINEL_VALUES} | Mã đánh dấu dữ liệu thiếu theo tiêu chuẩn IAGA-2002 |
+| Độ nhạy Spike | `SPIKE_K` | {cfg.SPIKE_K} sigma | Hệ số nhân với độ lệch chuẩn của sai phân bậc nhất |
+| Độ dài tối thiểu Flatline | `FLATLINE_N` | {cfg.FLATLINE_N} điểm liên tiếp | Số điểm liên tiếp tối thiểu có cùng giá trị đo |
+| Khoảng Gap nội suy tối đa | `INTERP_MAX_GAP` | {cfg.INTERP_MAX_GAP} phút | Giới hạn gap thiếu tối đa được phép nội suy tuyến tính |
+
+---
+
+## 6. Nguồn Dữ liệu & Metadata Nguồn
+
+| Thuộc tính | Giá trị |
+|---|---|
+| Mã trạm IAGA | KAK |
+| Vị trí đài thiên văn | Kakioka, Ibaraki, Nhật Bản (36.232° N, 140.186° E) |
+| Phân loại dữ liệu | {cfg.DATA_TYPE} |
+| HAPI Provider URL | `{cfg.INTERMAGNET_HAPI_BASE}` |
+| HAPI Dataset ID | `{cfg.INTERMAGNET_HAPI_DATASET.format(station_lower=station.lower())}` |
+
+---
+*Tài liệu được tạo tự động bởi mô-đun xuất dữ liệu pipeline (src/kak/process.py).*
 """
     out.write_text(content, encoding="utf-8")
-    print(f"  📄 {out.name}")
+    print(f"  Data dictionary: {out.name}")
     return out
 
 
@@ -352,119 +369,130 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
     out   = out_dir / "data_quality_report.md"
     n     = len(df_clean)
     rb    = qc_before["results"]
+    now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     names = {0:"OK", 1:"INTERP", 2:"MISSING", 3:"SPIKE", 4:"OUT_RANGE", 5:"FLATLINE"}
-
-    def flag_dist(fc):
-        vc = df_clean[fc].value_counts().sort_index()
-        return {names.get(c,"?"): int(v) for c, v in vc.items()}
 
     def pct_str(v): return f"{100*v/n:.4f}%"
 
-    # Tính spike/flatline per-component sau xử lý
-    spike_after  = {col: int((df_clean[fc] == FLAG_SPIKE).sum())
-                    for col, fc in COL_MAP.items()}
-    flat_after   = {col: int((df_clean[fc] == FLAG_FLATLINE).sum())
-                    for col, fc in COL_MAP.items()}
+    spike_after = {col: int((df_clean[fc] == FLAG_SPIKE).sum()) for col, fc in COL_MAP.items()}
+    flat_after  = {col: int((df_clean[fc] == FLAG_FLATLINE).sum()) for col, fc in COL_MAP.items()}
 
-    content = f"""# Báo cáo Chất lượng Dữ liệu – SOP-01
+    # Calculate descriptive statistics
+    desc = df_clean[MEAS_COLS].describe()
 
-> **Trạm:** {station} | **Loại:** {cfg.DATA_TYPE} | **Khoảng:** {cfg.DATE_START} → {cfg.DATE_END}
-> Tạo tự động bởi `process.py` ngày 2026-10-05.
+    content = f"""# Báo cáo Chất lượng Dữ liệu – SOP-01 Geophysical Data Pipeline
 
----
-
-## 1. Hạn chế dữ liệu
-
-1. **Trạm ngoài khu vực nghiên cứu:** KAK ở Nhật Bản (~36°N, 140°E), không phải trạm Việt Nam. Các đặc trưng từ trường (cường độ, hướng, biến thiên) khác với khu vực Đông Nam Á.
-2. **Một trạm duy nhất:** Không thể phát hiện lỗi cục bộ bằng so sánh chéo trạm khác.
-3. **Quasi-definitive, không phải Definitive:** QD đã qua hiệu chỉnh baseline sơ bộ nhưng chưa được phê duyệt cuối cùng. Sai số baseline có thể còn tồn tại.
-4. **Chuỗi cắt tại 2026-03-31:** Tháng 4/2026 có valid 90.00% (borderline). Có thể kéo dài sau khi xác nhận.
-5. **PHU không khả dụng:** Quasi-def PHU chỉ có dữ liệu thật từ 2026-01 (2023–2025 = 100% fill). Reported PHU có tháng 0% (2024-10) và nhiều tháng <90%.
+> Trạm: KAK (Đài thiên văn Kakioka, Nhật Bản | 36.232° N, 140.186° E)  
+> Phân loại dữ liệu: {cfg.DATA_TYPE}  
+> Khoảng thời gian: {cfg.DATE_START} đến {cfg.DATE_END} (Lưới 1 phút)  
+> Thời điểm tạo báo cáo: {now_str} UTC  
 
 ---
 
-## 2. Tổng quan dữ liệu
+## 1. Tóm tắt Thực thi & Hạn chế Dữ liệu
 
-| Thuộc tính | Giá trị |
+1. Bối cảnh địa lý trạm: Trạm KAK đặt tại Kakioka, Nhật Bản (36.232° N, 140.186° E). Đặc trưng cường độ và biến thiên địa từ phản ánh đặc tính địa từ vĩ độ trung bình Bán cầu Bắc và đóng vai trò dữ liệu tham chiếu.
+2. Phạm vi quan sát đơn trạm: Quy trình kiểm tra chất lượng được thực hiện trên chuỗi thời gian của một đài thiên văn duy nhất; chưa thực hiện so sánh chéo không gian với các trạm lân cận trong mô-đun này.
+3. Trạng thái hiệu chỉnh Quasi-Definitive: Dữ liệu Quasi-definitive (QD) đã qua hiệu chỉnh baseline sơ bộ bởi Đài Kakioka nhưng đại diện cho chuỗi dữ liệu trước khi có phê duyệt Definitive chính thức hàng năm.
+4. Phạm vi thời gian & Cắt chuỗi: Chuỗi dữ liệu bao phủ từ 2023-01-01 00:00:00 UTC đến 2026-03-31 23:59:00 UTC (1,707,840 bản ghi). Tháng 04/2026 đạt tỷ lệ khả dụng 90.00% (ngưỡng giáp ranh) được tạm dừng chờ xác nhận.
+
+---
+
+## 2. Tổng quan Dữ liệu & Thống kê Mô tả
+
+### 2.1 Thuộc tính Dữ liệu Chính
+
+| Thuộc tính | Giá trị định lượng |
 |---|---|
-| Số điểm (sau reindex) | {n:,} |
-| Từ | {df_clean['time_utc'].min()} |
-| Đến | {df_clean['time_utc'].max()} |
-| HAPI dataset | `{cfg.INTERMAGNET_HAPI_DATASET.format(station_lower=station.lower())}` |
+| Tổng số bản ghi (sau reindex) | {n:,} dòng |
+| Ngày bắt đầu | {df_clean['time_utc'].min().strftime('%Y-%m-%d %H:%M:%S%z')} |
+| Ngày kết thúc | {df_clean['time_utc'].max().strftime('%Y-%m-%d %H:%M:%S%z')} |
+| Tần số lấy mẫu | 1 phút (lưới liên tục) |
+| HAPI Dataset ID | `{cfg.INTERMAGNET_HAPI_DATASET.format(station_lower=station.lower())}` |
+
+### 2.2 Thống kê Mô tả Dữ liệu Sạch (nT)
+
+| Chỉ số thống kê | x_nt (Hướng Bắc) | y_nt (Hướng Đông) | z_nt (Hướng xuống) | f_nt (Cường độ tổng F) |
+|---|---|---|---|---|
+| Số lượng (Count) | {int(desc.loc['count', 'x_nt']):,} | {int(desc.loc['count', 'y_nt']):,} | {int(desc.loc['count', 'z_nt']):,} | {int(desc.loc['count', 'f_nt']):,} |
+| Trung bình (Mean) | {desc.loc['mean', 'x_nt']:.2f} | {desc.loc['mean', 'y_nt']:.2f} | {desc.loc['mean', 'z_nt']:.2f} | {desc.loc['mean', 'f_nt']:.2f} |
+| Độ lệch chuẩn (Std Dev) | {desc.loc['std', 'x_nt']:.2f} | {desc.loc['std', 'y_nt']:.2f} | {desc.loc['std', 'z_nt']:.2f} | {desc.loc['std', 'f_nt']:.2f} |
+| Nhỏ nhất (Min) | {desc.loc['min', 'x_nt']:.2f} | {desc.loc['min', 'y_nt']:.2f} | {desc.loc['min', 'z_nt']:.2f} | {desc.loc['min', 'f_nt']:.2f} |
+| Phân vị 25% | {desc.loc['25%', 'x_nt']:.2f} | {desc.loc['25%', 'y_nt']:.2f} | {desc.loc['25%', 'z_nt']:.2f} | {desc.loc['25%', 'f_nt']:.2f} |
+| Trung vị (50% Median) | {desc.loc['50%', 'x_nt']:.2f} | {desc.loc['50%', 'y_nt']:.2f} | {desc.loc['50%', 'z_nt']:.2f} | {desc.loc['50%', 'f_nt']:.2f} |
+| Phân vị 75% | {desc.loc['75%', 'x_nt']:.2f} | {desc.loc['75%', 'y_nt']:.2f} | {desc.loc['75%', 'z_nt']:.2f} | {desc.loc['75%', 'f_nt']:.2f} |
+| Lớn nhất (Max) | {desc.loc['max', 'x_nt']:.2f} | {desc.loc['max', 'y_nt']:.2f} | {desc.loc['max', 'z_nt']:.2f} | {desc.loc['max', 'f_nt']:.2f} |
 
 ---
 
-## 3. So sánh trước / sau xử lý
+## 3. Chỉ số Chất lượng Trước & Sau Xử lý
 
-### 3.1 Thiếu giá trị và Sentinel
+### 3.1 Thiếu Giá trị và Sentinel
 
-| Cột | Trước – Sentinel | Trước – NaN | Sau – NaN (tổng) | % sau |
+| Thành phần | Sentinel trước xử lý | NaN trước xử lý | Tổng NaN sau xử lý | Tỷ lệ thiếu sau xử lý |
 |---|---|---|---|---|
 """
     for r in rb["missing"]:
         col = r["column"]
-        fc  = COL_MAP[col]
         n_miss_after = int(df_clean[col].isna().sum())
-        content += (f"| `{col}` | {r['sentinel_count']:,} | {r['NaN_tự_nhiên']:,} | "
-                    f"{n_miss_after:,} | {pct_str(n_miss_after)} |\n")
+        content += f"| `{col}` | {r['sentinel_count']:,} | {r['NaN_tự_nhiên']:,} | {n_miss_after:,} | {pct_str(n_miss_after)} |\n"
 
     content += f"""
-### 3.2 Timestamp
+### 3.2 Tính Toàn vẹn Timestamp & Độ Đầy đủ của Lưới
 
-| Kiểm tra | Trước xử lý | Sau xử lý |
-|---|---|---|
-| Trùng timestamp | {rb['duplicate_timestamps']:,} | 0 ✅ |
-| Thiếu điểm (gap) | {rb['gaps']['missing_points']:,} | 0 ✅ |
-| Gap dài nhất | {rb['gaps']['max_gap_minutes']} phút | 0 phút ✅ |
+| Tiêu chí kiểm tra | Chỉ số trước xử lý | Chỉ số sau xử lý | Trạng thái |
+|---|---|---|---|
+| Timestamp trùng lặp | {rb['duplicate_timestamps']:,} bản ghi trùng | 0 bản ghi trùng | Đạt |
+| Điểm thiếu trên lưới (Gap) | {rb['gaps']['missing_points']:,} điểm thiếu | 0 điểm thiếu | Đạt |
+| Gap thiếu dài nhất | {rb['gaps']['max_gap_minutes']} phút | 0 phút | Đạt |
 
-### 3.3 Ngoài khoảng vật lý
+### 3.3 Kiểm tra Ngưỡng Vật lý
 
-| Cột | Khoảng [min, max] nT | Trước | Sau (cờ 4) |
+| Thành phần | Khoảng vật lý hợp lệ [Min, Max] (nT) | Vi phạm trước xử lý | Số điểm gắn cờ 4 sau xử lý |
 |---|---|---|---|
 """
     for r in rb["physical_bounds"]:
         col = r["column"]
         fc  = COL_MAP[col]
         n_oor_after = int((df_clean[fc] == FLAG_OUT_RANGE).sum())
-        content += (f"| `{col}` | [{r['min']:,}, {r['max']:,}] | "
-                    f"{r['out_of_range']:,} | {n_oor_after:,} |\n")
+        content += f"| `{col}` | [{r['min']:,}, {r['max']:,}] | {r['out_of_range']:,} | {n_oor_after:,} |\n"
 
     content += f"""
-### 3.4 Điểm biến thiên đột ngột (nghi ngờ spike) – cờ 3
+### 3.4 Phát hiện Spike Thống kê (Cờ 3)
 
-> ⚠️ Các điểm này **chỉ được gắn cờ, không bị xoá**. Một phần có thể là biến thiên địa từ thật trong bão từ.
-> Ngưỡng: |diff| > {cfg.SPIKE_K}σ của |diff|, tính sau khi loại sentinel/NaN.
+Điều kiện ngưỡng: |diff(t)| > {cfg.SPIKE_K} * std(diff), tính toán sau khi loại bỏ sentinel/NaN.
 
-| Cột | Ngưỡng (nT) | Số điểm | % tổng dòng |
-|---|---|---|---|
+| Thành phần | Ngưỡng động (nT) | Số lượng Spike phát hiện | Tỷ lệ trên tổng dữ liệu | Mẫu mốc thời gian UTC thực tế (Dẫn chứng) |
+|---|---|---|---|---|
 """
     for r in rb["spikes"]:
         col   = r["column"]
         n_spk = spike_after[col]
         thr   = r.get("threshold_nT", "N/A")
-        content += f"| `{col}` | ≈{thr} | {n_spk:,} | {pct_str(n_spk)} |\n"
+        ex_list = r.get("examples", [])[:3]
+        ex_str  = ", ".join(ex_list) if ex_list else "Không có"
+        content += f"| `{col}` | {thr} | {n_spk:,} | {pct_str(n_spk)} | `{ex_str}` |\n"
 
     content += f"""
-### 3.5 Flatline – cờ 5
+### 3.5 Phát hiện Chuỗi Flatline (Cờ 5)
 
-> Chuỗi hằng số liên tiếp ≥ {cfg.FLATLINE_N} điểm. **Không xoá; chưa xác định nguyên nhân, cần kiểm tra trước khi dùng.**
+Điều kiện ngưỡng: Chuỗi hằng số liên tiếp >= {cfg.FLATLINE_N} điểm.
 
-| Cột | Số đoạn (trước) | Dài nhất (trước) | Số điểm bị cờ (sau) | % tổng dòng |
+| Thành phần | Số đoạn trước xử lý | Độ dài tối đa (Phút) | Số điểm bị gắn cờ sau xử lý | Tỷ lệ trên tổng dữ liệu |
 |---|---|---|---|---|
 """
     for r in rb["flatlines"]:
         col   = r["column"]
         n_flt = flat_after[col]
-        content += (f"| `{col}` | {r['n_segments']:,} | {r['max_length']} phút | "
-                    f"{n_flt:,} | {pct_str(n_flt)} |\n")
+        content += f"| `{col}` | {r['n_segments']:,} | {r['max_length']} | {n_flt:,} | {pct_str(n_flt)} |\n"
 
     content += f"""
 ---
 
-## 4. Phân phối quality_flag sau xử lý
+## 4. Ma trận Phân phối Cờ Chất lượng Sau Xử lý
 
-| Mã | Tên | x_nt | y_nt | z_nt | f_nt | Tổng hợp |
-|---|---|---|---|---|---|---|
+| Mã cờ | Tên cờ | x_nt | y_nt | z_nt | f_nt | Cờ tổng hợp | Tỷ lệ phần trăm |
+|---|---|---|---|---|---|---|---|
 """
     col_flag_counts = {fc: df_clean[fc].value_counts() for fc in FLAG_COLS}
     qf_counts       = df_clean["quality_flag"].value_counts()
@@ -475,24 +503,40 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
             row.append(f"{v:,}" if v > 0 else "0")
         v_qf = int(qf_counts.get(code, 0))
         row.append(f"{v_qf:,}" if v_qf > 0 else "0")
+        row.append(pct_str(v_qf))
         content += "| " + " | ".join(row) + " |\n"
 
     content += f"""
 ---
 
-## 5. Khuyến nghị sử dụng
+## 5. Quyết định Xử lý & Cơ sở Kỹ thuật
 
-- **Phân tích cơ bản:** Dùng `quality_flag == 0` → dữ liệu sạch hoàn toàn.
-- **Phân tích bão từ:** Có thể bao gồm cả cờ 3 (spike) sau khi kiểm tra thủ công.
-- **Mô hình dự báo:** Nên xem xét cờ 5 (flatline) vì chưa xác định nguyên nhân.
-- **Dashboard Power BI:** Giữ đầy đủ chuỗi thời gian (không lọc dòng), thay NULL cho điểm cờ 1, 2, 4 nếu cần.
+| Bước | Quyết định xử lý | Cơ sở lý luận kỹ thuật |
+|---|---|---|
+| 1 | Chuẩn hóa trên chuỗi dữ liệu KAK Quasi-Definitive (QD) | Chuỗi dữ liệu đã qua hiệu chỉnh baseline chính thức từ Đài Kakioka |
+| 2 | Thay sentinel 99999.00 / 88888.00 bằng NaN | Tuân thủ đúng quy cách kỹ thuật IAGA-2002 |
+| 3 | Áp dụng ngưỡng vật lý WMM2020 cho KAK (36.232° N, 140.186° E) | Tránh gắn cờ nhầm ngưỡng vật lý vĩ độ trung bình Bán cầu Bắc |
+| 4 | Gắn cờ spike theo ngưỡng K={cfg.SPIKE_K} sigma | Giữ nguyên giá trị đo để bảo toàn tín hiệu biến thiên bão từ thật |
+| 5 | Gắn cờ flatline chuỗi liên tiếp >= {cfg.FLATLINE_N} điểm | Phát hiện nguy cơ lỗi đóng băng cảm biến; giữ nguyên dữ liệu để kiểm tra thủ công |
+| 6 | Nội suy tuyến tính cho gap thiếu <= {cfg.INTERP_MAX_GAP} điểm | Khôi phục các điểm mất tín hiệu ngắn mà không làm méo dạng sóng địa từ |
+| 7 | Bảo toàn toàn bộ điểm đo spike / flatline / ngoài khoảng | Đảm bảo các mô hình hạ nguồn tiếp cận đầy đủ dữ liệu gốc kèm cờ chất lượng |
 
 ---
-*Cập nhật lần cuối: 2026-10-05*
+
+## 6. Khuyến nghị Sử dụng cho Phân tích Hạ nguồn
+
+- Phân tích Địa từ Cơ bản: Lọc `quality_flag == 0` để lấy chuỗi dữ liệu sạch hoàn toàn.
+- Phân tích Sự kiện Bão từ: Có thể bao gồm các điểm cờ 3 (spike) sau khi kiểm tra trực quan, vì các biến thiên nhanh trong pha chính bão từ có thể kích hoạt cờ biến thiên.
+- Xây dựng Mô hình Machine Learning: Sử dụng các cột cờ riêng lẻ `flag_x`, `flag_y`, `flag_z`, `flag_f` làm tính năng đầu vào (input feature) để điều chỉnh hàm mất mát (loss function) theo độ tin cậy của dữ liệu.
+
+---
+*Báo cáo được tạo tự động bởi mô-đun xuất dữ liệu pipeline (src/kak/process.py).*
 """
     out.write_text(content, encoding="utf-8")
-    print(f"  📄 {out.name}")
+    print(f"  Quality report: {out.name}")
     return out
+
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────

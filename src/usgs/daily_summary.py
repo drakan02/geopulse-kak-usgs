@@ -202,7 +202,7 @@ def update_data_dictionary(stats: dict):
 | `dominant_magtype` | `object` | – | magType phổ biến nhất (mode) | `NULL` |
 | `mean_depth_km` | `float32` | km | Độ sâu trung bình | `NULL` |
 
-> ⚠️ `max_mag` và `dominant_magtype` trộn nhiều thang đo (mb, mww, mwr…). 
+> Ghi chú: `max_mag` và `dominant_magtype` trộn nhiều thang đo (mb, mww, mwr…). 
 > Không so sánh tuyệt đối giữa các ngày có `dominant_magtype` khác nhau.
 > Ngày có dư chấn sau trận lớn **không bị xoá**; n_events đột biến là thực tế địa chấn.
 
@@ -269,10 +269,10 @@ def update_quality_report(stats: dict):
 |---|---|
 | File | `{OUT_NAME}` |
 | Số ngày (lưới đầy đủ) | {stats['N_DAYS']:,} |
-| Assert n_events | sum = {stats['N_EVENTS']:,} ✅ |
-| Assert n_events_japan | sum = {stats['N_JAPAN']:,} ✅ |
-| Assert n_events_m5plus | sum = {stats['N_M5PLUS']:,} ✅ |
-| Ngày 0 sự kiện | {stats['N_ZERO_DAYS']:,} (max_mag/dominant_magtype/mean_depth_km = NULL) ✅ |
+| Assert n_events | sum = {stats['N_EVENTS']:,} (Đạt kiểm chứng) |
+| Assert n_events_japan | sum = {stats['N_JAPAN']:,} (Đạt kiểm chứng) |
+| Assert n_events_m5plus | sum = {stats['N_M5PLUS']:,} (Đạt kiểm chứng) |
+| Ngày 0 sự kiện | {stats['N_ZERO_DAYS']:,} (max_mag/dominant_magtype/mean_depth_km = NULL; Đạt kiểm chứng) |
 | Ngày nhiều nhất | {stats['MAX_DAY_EVENTS']:,} sự kiện |
 | Tạo lúc | {today} |
 

@@ -51,14 +51,20 @@ def step2_remove_duplicates(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
 
 
 def step3_replace_sentinel(df: pd.DataFrame,
-                            sentinel_values: list[float] | None = None) -> pd.DataFrame:
+                            sentinel_values: list[float] | float | None = None) -> pd.DataFrame:
     """Bước 3.3 – Thay sentinel → NaN cho các cột đo lường."""
-    sentinel_values = sentinel_values or cfg.SENTINEL_VALUES
+    if sentinel_values is None:
+        sentinel_list = cfg.SENTINEL_VALUES
+    elif isinstance(sentinel_values, (int, float, np.number)):
+        sentinel_list = [float(sentinel_values)]
+    else:
+        sentinel_list = [float(x) for x in sentinel_values]
+
     df = df.copy()
     meas_cols = [c for c in df.columns if c.endswith("_nt")]
     replaced_total = 0
     for col in meas_cols:
-        mask = df[col].isin(sentinel_values)
+        mask = df[col].isin(sentinel_list)
         n    = int(mask.sum())
         if n:
             df.loc[mask, col] = np.nan
