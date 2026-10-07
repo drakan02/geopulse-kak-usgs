@@ -1,0 +1,31 @@
+# ── Dữ liệu thô – KHÔNG đưa vào Git (quá lớn, tải lại được từ API) ──────────
+data/raw/
+data/raw/intermagnet/
+data/raw/usgs/
+
+# Dữ liệu trung gian
+data/interim/
+
+# Dữ liệu clean – commit vào Git (< 100 MB tổng)
+# Nếu vượt 100 MB → dùng Git LFS: git lfs track "data/clean/*.parquet"
+# data/clean/   ← để KHÔNG ignore, cho phép commit
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+*.egg-info/
+.ipynb_checkpoints/
+dist/
+build/
+
+# ── Logs hệ thống (không phải download log) ───────────────────────────────────
+*.log
+
+# ── Editor ────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+SOP-01.md
