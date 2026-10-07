@@ -3,7 +3,6 @@
 > Vùng quan sát: Nhật Bản và phụ cận (Vĩ độ 24.0°N–46.0°N, Kinh độ 122.0°E–150.0°E)  
 > Ngưỡng độ lớn: Magnitude M >= 4.0  
 > Khoảng thời gian: 2023-01-01 đến 2026-03-31  
-> Thời điểm tạo báo cáo: 2026-10-07T15:42:23Z UTC  
 
 ---
 
@@ -131,7 +130,6 @@ Top 5 Ngày có số lượng động đất cao nhất trong chuỗi thời gia
 | Assert n_events_m5plus | sum = 426 (Đạt kiểm chứng) |
 | Ngày 0 sự kiện | 86 (max_mag/dominant_magtype/mean_depth_km = NULL; Đạt kiểm chứng) |
 | Ngày nhiều nhất | 64 sự kiện |
-| Tạo lúc | 2026-10-07 |
 
 ### Top 5 ngày nhiều sự kiện nhất
 
@@ -146,5 +144,3 @@ Top 5 Ngày có số lượng động đất cao nhất trong chuỗi thời gia
 > Các ngày đột biến do dư chấn **không bị xoá**. Người dùng Power BI nên
 > nhận biết các ngày này khi diễn giải xu hướng.
 
----
-*Cập nhật: 2026-10-07*

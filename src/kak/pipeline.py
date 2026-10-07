@@ -249,7 +249,7 @@ def run_pipeline(df_raw: pd.DataFrame,
     log["steps"]["7_dtypes"] = {c: str(df[c].dtype) for c in df.columns}
     print(f"  Bước 3.7: Ép kiểu xong")
 
-    print(f"\n  ✅ Pipeline hoàn tất | {station}: {len(df):,} dòng")
+    print(f"\n  Pipeline hoan tat | {station}: {len(df):,} dong")
     return df, log
 
 
@@ -313,4 +313,4 @@ def run_assertions(df: pd.DataFrame,
             )
         print(f"  ✅ Khớp với kỳ vọng từ Bước 2")
 
-    print(f"\n  🎉 Tất cả kiểm chứng ĐẠT | {station}")
+    print(f"\n  Tat ca kiem chung DAT | {station}")
