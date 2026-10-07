@@ -8,8 +8,8 @@ Quy tắc bất biến:
 
 Sản phẩm xuất:
   - data/clean/clean_intermagnet_KAK_1min_20230101_20260331.parquet
-  - docs/data_dictionary.md
-  - docs/data_quality_report.md
+  - docs/kak/data_dictionary.md
+  - docs/kak/data_quality_report.md
 
 Thực thi:
   python src/kak/process.py
@@ -264,8 +264,9 @@ def export_parquet(df: pd.DataFrame, station: str) -> Path:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def export_data_dictionary(station: str):
-    cfg.DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    out = cfg.DOCS_DIR / "data_dictionary.md"
+    out_dir = cfg.DOCS_DIR / "kak"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / "data_dictionary.md"
     content = f"""# Data Dictionary – SOP-01 Geophysical Data Pipeline
 
 > Tạo tự động bởi `process.py`. Cập nhật khi schema thay đổi.
@@ -346,7 +347,9 @@ Nguồn: INTERMAGNET technical guide + WMM khu vực KAK (~36.2°N, 140.2°E)
 # ─────────────────────────────────────────────────────────────────────────────
 
 def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str):
-    out   = cfg.DOCS_DIR / "data_quality_report.md"
+    out_dir = cfg.DOCS_DIR / "kak"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out   = out_dir / "data_quality_report.md"
     n     = len(df_clean)
     rb    = qc_before["results"]
     names = {0:"OK", 1:"INTERP", 2:"MISSING", 3:"SPIKE", 4:"OUT_RANGE", 5:"FLATLINE"}
@@ -540,7 +543,7 @@ def main():
         print(f"\n  Tháng 2026-04 KAK quasi-def:")
         print(f"    Valid: 38,879 / 43,199 = 90.00% (borderline ngưỡng ≥90%)")
         print(f"    → Chưa tải. Chờ xác nhận của bạn.")
-        print(f"\n→ DỪNG. Xem docs/data_quality_report.md để biết chi tiết đầy đủ.")
+        print(f"\n→ DỪNG. Xem docs/kak/data_quality_report.md để biết chi tiết đầy đủ.")
 
 
 if __name__ == "__main__":

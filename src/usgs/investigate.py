@@ -1,8 +1,8 @@
 """
-investigate_usgs.py – Điều tra chi tiết ranh giới thời gian, chênh lệch số lượng và phân vùng dữ liệu động đất.
+investigate.py – Điều tra chi tiết ranh giới thời gian, chênh lệch số lượng và phân vùng dữ liệu động đất.
 
 Thực thi:
-  python src/usgs/investigate_usgs.py
+  python src/usgs/investigate.py
 """
 import sys, csv, hashlib, time as time_mod, re
 from pathlib import Path

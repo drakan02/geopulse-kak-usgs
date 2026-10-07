@@ -1,5 +1,5 @@
 """
-explore_quality.py – Khảo sát cấu trúc và kiểm tra chất lượng dữ liệu KAK thô.
+explore.py – Khảo sát cấu trúc và kiểm tra chất lượng dữ liệu KAK thô.
 
 Mục đích:
   - Khảo sát metadata HAPI info & đặc trưng dữ liệu thô KAK (Bước 1).
@@ -7,7 +7,7 @@ Mục đích:
   - Lưu kết quả QC interim vào data/interim/qc_before_KAK.pkl.
 
 Thực thi:
-  python src/kak/explore_quality.py
+  python src/kak/explore.py
 """
 
 import sys

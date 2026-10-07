@@ -1,5 +1,5 @@
 """
-download_kak.py – Tải dữ liệu địa từ thô INTERMAGNET (trạm KAK) từ BGS HAPI API.
+download.py – Tải dữ liệu địa từ thô INTERMAGNET (trạm KAK) từ BGS HAPI API.
 
 Nguyên tắc:
   - Lưu NGUYÊN VẸN file CSV thô vào data/raw/intermagnet/, KHÔNG sửa nội dung.
@@ -7,7 +7,7 @@ Nguyên tắc:
   - Bỏ qua file đã tồn tại (dùng --force để tải lại).
 
 Thực thi:
-  python src/kak/download_kak.py [--force]
+  python src/kak/download.py [--force]
 """
 
 import argparse
@@ -227,7 +227,7 @@ def download_usgs_csv(force: bool = False) -> Path | None:
             log_download({
                 "source": "USGS", "station": "N/A", "url": url,
                 "local_file": "", "file_size_bytes": 0, "sha256": "",
-                "downloaded_at": datetime.utcnow().isoformat(), "note": str(e),
+                "downloaded_at": datetime.now(tz=timezone.utc).isoformat(), "note": str(e),
             })
             continue
 
@@ -241,7 +241,7 @@ def download_usgs_csv(force: bool = False) -> Path | None:
             "url": resp.url,
             "local_file": str(out_path.relative_to(cfg.PROJECT_ROOT)),
             "file_size_bytes": size, "sha256": ck,
-            "downloaded_at": datetime.utcnow().isoformat(),
+            "downloaded_at": datetime.now(tz=timezone.utc).isoformat(),
             "note": f"mag≥{cfg.USGS_MIN_MAG}, bbox={cfg.USGS_BBOX}",
         })
         time.sleep(2)
@@ -297,7 +297,7 @@ def download_usgs_geojson(force: bool = False) -> Path | None:
             "url": resp.url,
             "local_file": str(out_path.relative_to(cfg.PROJECT_ROOT)),
             "file_size_bytes": size, "sha256": ck,
-            "downloaded_at": datetime.utcnow().isoformat(),
+            "downloaded_at": datetime.now(tz=timezone.utc).isoformat(),
             "note": f"GeoJSON, mag≥{cfg.USGS_MIN_MAG}",
         })
         time.sleep(2)

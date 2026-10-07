@@ -29,7 +29,7 @@
 | `0` | OK | Giá trị gốc hợp lệ | Dùng được trực tiếp |
 | `1` | INTERP | Giá trị nội suy tuyến tính (gap ngắn ≤ 5 phút) | Đã được nội suy từ cờ 2 |
 | `2` | MISSING | Thiếu dữ liệu / Sentinel (NaN hoặc fill [99999.0, 88888.0]) | Thay bằng NaN ở cột đo |
-| `3` | SPIKE | \|diff\| > 5.0σ của diff (sau khi loại sentinel) | **Không xoá**; có thể là biến thiên địa từ thật trong bão từ |
+| `3` | SPIKE | |diff| > 5.0σ của diff (sau khi loại sentinel) | **Không xoá**; có thể là biến thiên địa từ thật trong bão từ |
 | `4` | OUT_OF_RANGE | Ngoài khoảng vật lý hợp lệ | Xem `config.PHYSICAL_BOUNDS` |
 | `5` | FLATLINE | ≥ 10 điểm liên tiếp cùng giá trị | **Không xoá**; chưa xác định nguyên nhân, cần kiểm tra trước khi dùng |
 

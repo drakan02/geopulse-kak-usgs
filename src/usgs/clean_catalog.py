@@ -354,13 +354,13 @@ def clean_and_export(count_full: int):
 # Tạo tài liệu
 # ─────────────────────────────────────────────────────────────────────────────
 def write_docs(df: pd.DataFrame, n_removed: int, count_full: int, n_raw_before_dedup: int):
-    docs = cfg.DOCS_DIR
+    docs = cfg.DOCS_DIR / "usgs"
     docs.mkdir(parents=True, exist_ok=True)
 
     n = len(df)
 
-    # ── data_dictionary_usgs.md ──────────────────────────────────────────
-    dd = docs / "data_dictionary_usgs.md"
+    # ── data_dictionary.md ───────────────────────────────────────────────
+    dd = docs / "data_dictionary.md"
     dd.write_text(f"""# Data Dictionary – USGS Earthquake Catalog
 
 > Tạo tự động bởi `clean_catalog.py`. Cập nhật khi schema thay đổi.
@@ -448,8 +448,8 @@ Catalog trộn nhiều thang đo magnitude:
 *Cập nhật: {datetime.now(tz=timezone.utc).strftime('%Y-%m-%d')}*
 """, encoding="utf-8")
 
-    # ── usgs_quality_report.md ───────────────────────────────────────────
-    qr = docs / "usgs_quality_report.md"
+    # ── data_quality_report.md ───────────────────────────────────────────
+    qr = docs / "data_quality_report.md"
     region_counts = df["region"].value_counts()
     magtype_counts = df["mag_type"].value_counts()
     status_counts = df["status"].value_counts()
@@ -579,13 +579,13 @@ def update_scope(n_events: int):
 Giai đoạn 1 dùng `endtime='YYYY-MM-DD'` → USGS API hiểu là `T00:00:00Z` (đầu ngày),
 bỏ sót 12 ngày cuối quý, thiếu **37 sự kiện**. Giai đoạn 2 sửa thành
 `[Q_start, Q_next_start)` (half-open) với ISO datetime đầy đủ. Lỗi đã ghi vào
-`docs/usgs_quality_report.md`.
+`docs/usgs/data_quality_report.md`.
 
 ### Hạn chế bbox
 
 Hộp toạ độ (lat 24–46, lon 122–150) bao gồm ~8.32% sự kiện ngoài Nhật Bản
 (chủ yếu Kamchatka/Kuril 7.2%, Taiwan 0.9%). Cột `region` trong dataset phân loại
-gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `usgs_quality_report.md`.
+gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `data_quality_report.md`.
 """
     # Thay phần USGS cũ
     if "## 2. Dữ liệu địa chấn USGS" in text:
@@ -625,8 +625,8 @@ def main():
     print(f"  Khớp count vs file           : {'✅' if len(df_clean)==count_full else '⚠️'}")
     print(f"  File Parquet                 : {out_path.name}")
     print(f"\n  Tài liệu:")
-    print(f"    docs/data_dictionary_usgs.md")
-    print(f"    docs/usgs_quality_report.md")
+    print(f"    docs/usgs/data_dictionary.md")
+    print(f"    docs/usgs/data_quality_report.md")
     print(f"    docs/scope.md")
     print(f"\n→ DỪNG. Chưa sang Giai đoạn 3. Chờ xác nhận.")
 

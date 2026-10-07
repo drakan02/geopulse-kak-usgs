@@ -1,8 +1,8 @@
 """
-analyze_usgs.py – Khảo sát và phân tích cấu trúc dữ liệu thô USGS Earthquake Catalog.
+analyze.py – Khảo sát và phân tích cấu trúc dữ liệu thô USGS Earthquake Catalog.
 
 Thực thi:
-  python src/usgs/analyze_usgs.py
+  python src/usgs/analyze.py
 """
 
 import sys

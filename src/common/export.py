@@ -3,12 +3,12 @@ export.py – Tiện ích xuất sản phẩm Parquet và tự động tạo tà
 
 Sản phẩm xuất:
   - File Parquet chuẩn hoá trong data/clean/
-  - Data Dictionary (docs/data_dictionary.md)
-  - Data Quality Report (docs/data_quality_report.md)
+  - Data Dictionary (docs/kak/data_dictionary.md, docs/usgs/data_dictionary.md)
+  - Data Quality Report (docs/kak/data_quality_report.md, docs/usgs/data_quality_report.md)
 """
 
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -138,15 +138,16 @@ _FLAG_DOCS = [
 
 def write_data_dictionary(df: pd.DataFrame, meta: dict | None = None) -> Path:
     """
-    Viết docs/data_dictionary.md từ schema thực tế của DataFrame.
+    Viết docs/kak/data_dictionary.md từ schema thực tế của DataFrame.
     """
-    cfg.DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = cfg.DOCS_DIR / "data_dictionary.md"
+    out_dir = cfg.DOCS_DIR / "kak"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "data_dictionary.md"
 
     lines = [
         "# Data Dictionary – SOP-01 Geophysical Data Pipeline",
         "",
-        f"> **Tạo lúc:** {datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')} UTC  ",
+        f"> **Tạo lúc:** {datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')} UTC  ",
         f"> **Nguồn:** INTERMAGNET (trạm PHU, DLT) + USGS Earthquake  ",
         f"> **Khoảng thời gian:** {cfg.DATE_START} → {cfg.DATE_END}  ",
         "",
@@ -235,10 +236,11 @@ def write_quality_report(qc_before: dict,
                           processing_log: dict,
                           meta: dict | None = None) -> Path:
     """
-    Viết docs/data_quality_report.md với số liệu trước/sau xử lý.
+    Viết docs/kak/data_quality_report.md với số liệu trước/sau xử lý.
     """
-    cfg.DOCS_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = cfg.DOCS_DIR / "data_quality_report.md"
+    out_dir = cfg.DOCS_DIR / "kak"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "data_quality_report.md"
     station  = qc_before.get("station", "N/A")
 
     def fmt_df(df: pd.DataFrame) -> str:
@@ -259,7 +261,7 @@ def write_quality_report(qc_before: dict,
         f"> **Khoảng thời gian:** {cfg.DATE_START} → {cfg.DATE_END}  ",
         f"> **Tần số:** {cfg.SAMPLE_FREQ}  ",
         f"> **Loại dữ liệu:** {cfg.DATA_TYPE}  ",
-        f"> **Tạo lúc:** {datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')} UTC  ",
+        f"> **Tạo lúc:** {datetime.now(tz=timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')} UTC  ",
         "",
         "---",
         "",

@@ -1,5 +1,5 @@
 """
-download_usgs.py – Tải dữ liệu động đất từ USGS FDSN Web Service.
+download.py – Tải dữ liệu động đất từ USGS FDSN Web Service.
 
 Nguyên tắc:
   - Tải theo các khoảng thời gian (quý), tự động kiểm tra count trước khi query.
@@ -7,7 +7,7 @@ Nguyên tắc:
   - Ghi nhật ký vào logs/usgs_download_log.csv.
 
 Thực thi:
-  python src/usgs/download_usgs.py
+  python src/usgs/download.py
 """
 
 import sys
@@ -303,7 +303,7 @@ def main():
     else:
         print(f"  ✅ Tất cả count API = số dòng thực tế")
 
-    print(f"\n→ Tải xong. Chạy tiếp: python src/analyze_usgs.py")
+    print(f"\n→ Tải xong. Chạy tiếp: python src/usgs/analyze.py")
 
 
 if __name__ == "__main__":

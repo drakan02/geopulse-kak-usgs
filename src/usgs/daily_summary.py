@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import config as cfg
 
 CLEAN_DIR = cfg.DATA_CLEAN
-DOCS_DIR  = cfg.DOCS_DIR
+DOCS_DIR  = cfg.DOCS_DIR / "usgs"
 
 CLEAN_IN  = CLEAN_DIR / "clean_usgs_JP_M4_20230101_20260331.parquet"
 OUT_NAME  = "clean_usgs_JP_M4_daily_20230101_20260331.parquet"
@@ -178,8 +178,8 @@ def export_parquet(summary: pd.DataFrame):
 
 # ─────────────────────────────────────────────────────────────────────────────
 def update_data_dictionary(stats: dict):
-    """Cập nhật data_dictionary_usgs.md: thêm phần daily summary + đánh dấu cột thô."""
-    dd_path = DOCS_DIR / "data_dictionary_usgs.md"
+    """Cập nhật data_dictionary.md: thêm phần daily summary + đánh dấu cột thô."""
+    dd_path = DOCS_DIR / "data_dictionary.md"
     today   = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
     dd_text = dd_path.read_text(encoding="utf-8")
@@ -247,13 +247,13 @@ Phần lớn không dùng trong dashboard Power BI thông thường:
     if marker in dd_text:
         dd_text = dd_text[:dd_text.rfind(marker)]
     dd_path.write_text(dd_text + daily_section, encoding="utf-8")
-    print(f"  📄 data_dictionary_usgs.md (cập nhật)")
+    print(f"  📄 data_dictionary.md (cập nhật)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 def update_quality_report(stats: dict):
-    """Thêm section daily summary vào usgs_quality_report.md."""
-    qr_path = DOCS_DIR / "usgs_quality_report.md"
+    """Thêm section daily summary vào data_quality_report.md."""
+    qr_path = DOCS_DIR / "data_quality_report.md"
     today   = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
     top5_rows = "\n".join(
@@ -294,13 +294,13 @@ def update_quality_report(stats: dict):
     if marker in text:
         text = text[:text.rfind(marker)]
     qr_path.write_text(text + section, encoding="utf-8")
-    print(f"  📄 usgs_quality_report.md (cập nhật)")
+    print(f"  📄 data_quality_report.md (cập nhật)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 def update_scope(stats: dict):
     """Cập nhật scope.md: thêm dòng daily summary."""
-    scope = DOCS_DIR / "scope.md"
+    scope = cfg.DOCS_DIR / "scope.md"
     text  = scope.read_text(encoding="utf-8")
     note  = (f"\n### Bảng daily summary\n\n"
              f"File: `data/clean/{OUT_NAME}`  \n"

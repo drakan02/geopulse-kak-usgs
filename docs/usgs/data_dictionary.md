@@ -71,7 +71,7 @@ Catalog trộn nhiều thang đo magnitude:
 | Mag ≥ | 4.0 |
 | eventtype | earthquake |
 | Nguồn | USGS FDSN: `https://earthquake.usgs.gov/fdsnws/event/1/query` |
-| Ngày tải | 2026-10-04 |
+| Ngày tải | 2026-10-07 |
 
 ## Lỗi endtime đã sửa
 
@@ -111,60 +111,7 @@ Catalog trộn nhiều thang đo magnitude:
 | sum(n_events_m5plus) | 426 (sự kiện M≥5.0) |
 | Ngày 0 sự kiện | 86 |
 | Ngày nhiều nhất | 64 sự kiện |
-| Ngày tải | 2026-10-04 |
-
-## Cột thô USGS (ít dùng trực tiếp)
-
-Các cột sau được giữ nguyên từ CSV gốc USGS để phục vụ phân tích chuyên sâu.
-Phần lớn không dùng trong dashboard Power BI thông thường:
-
-| Cột | Ghi chú |
-|---|---|
-| `nst` | Số trạm định vị – chỉ số tin cậy vị trí |
-| `gap_deg` | Góc azimuth trạm – chỉ số tin cậy vị trí |
-| `dmin_deg` | Khoảng cách tới trạm gần nhất |
-| `rms` | Residual định vị – chỉ số tin cậy vị trí |
-| `net` | Mạng lưới báo cáo sự kiện (us, pt, …) |
-| `horizontal_error_km` | Sai số ngang định vị |
-| `depth_error_km` | Sai số độ sâu |
-| `mag_error` | Sai số magnitude |
-| `mag_nst` | Số trạm tính magnitude |
-| `location_source` | Mạng lưới cung cấp định vị |
-| `mag_source` | Mạng lưới cung cấp magnitude |
-| `event_type` | Luôn = `earthquake` (đã lọc khi tải; cột hằng số) |
-| `updated_utc` | Timestamp cập nhật cuối – dùng để dedup, không cần cho analysis |
-
-## File daily summary
-
-`data/clean/clean_usgs_JP_M4_daily_20230101_20260331.parquet`
-
-### Schema cột daily summary
-
-| Cột | Kiểu | Đơn vị | Mô tả | Ngày trống |
-|---|---|---|---|---|
-| `date` | `datetime64[us, UTC]` | – | Ngày UTC (00:00:00Z) | – |
-| `n_events` | `int32` | – | Số sự kiện trong ngày | `0` |
-| `n_events_japan` | `int32` | – | Sự kiện thuộc region=Japan | `0` |
-| `n_events_m5plus` | `int32` | – | Sự kiện M ≥ 5.0 | `0` |
-| `max_mag` | `float32` | – | Magnitude lớn nhất trong ngày | `NULL` |
-| `dominant_magtype` | `object` | – | magType phổ biến nhất (mode) | `NULL` |
-| `mean_depth_km` | `float32` | km | Độ sâu trung bình | `NULL` |
-
-> ⚠️ `max_mag` và `dominant_magtype` trộn nhiều thang đo (mb, mww, mwr…). 
-> Không so sánh tuyệt đối giữa các ngày có `dominant_magtype` khác nhau.
-> Ngày có dư chấn sau trận lớn **không bị xoá**; n_events đột biến là thực tế địa chấn.
-
-### Thông số lưới
-
-| Thuộc tính | Giá trị |
-|---|---|
-| Số ngày (lưới đầy đủ) | 1,186 |
-| sum(n_events) | 4,184 (= tổng sự kiện file clean) |
-| sum(n_events_japan) | 3,836 |
-| sum(n_events_m5plus) | 426 (sự kiện M≥5.0) |
-| Ngày 0 sự kiện | 86 |
-| Ngày nhiều nhất | 64 sự kiện |
-| Ngày tải | 2026-10-05 |
+| Ngày tải | 2026-10-07 |
 
 ## Cột thô USGS (ít dùng trực tiếp)
 
@@ -188,4 +135,4 @@ Phần lớn không dùng trong dashboard Power BI thông thường:
 | `updated_utc` | Timestamp cập nhật cuối – dùng để dedup, không cần cho analysis |
 
 ---
-*Cập nhật: 2026-10-05*
+*Cập nhật: 2026-10-07*

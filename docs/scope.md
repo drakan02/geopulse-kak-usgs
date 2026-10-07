@@ -26,7 +26,8 @@
   - 4,320 điểm fill (10% tháng) sẽ tạo gap phân tán trong chuỗi.
   - Các gap này vượt `INTERP_MAX_GAP = 5 phút`, không thể nội suy tuyến tính.
   - Nhóm ưu tiên tính đồng nhất 100% valid trên toàn chuỗi hơn việc thêm 1 tháng bất hoàn chỉnh.
-- Ghi chú vào `data_dictionary.md` và `data_quality_report.md`.
+- Ghi chú vào `docs/kak/data_dictionary.md` và `docs/kak/data_quality_report.md`.
+
 
 
 
@@ -50,13 +51,13 @@
 Giai đoạn 1 dùng `endtime='YYYY-MM-DD'` → USGS API hiểu là `T00:00:00Z` (đầu ngày),
 bỏ sót 12 ngày cuối quý, thiếu **37 sự kiện**. Giai đoạn 2 sửa thành
 `[Q_start, Q_next_start)` (half-open) với ISO datetime đầy đủ. Lỗi đã ghi vào
-`docs/usgs_quality_report.md`.
+`docs/usgs/data_quality_report.md`.
 
 ### Hạn chế bbox
 
 Hộp toạ độ (lat 24–46, lon 122–150) bao gồm ~8.32% sự kiện ngoài Nhật Bản
 (chủ yếu Kamchatka/Kuril 7.2%, Taiwan 0.9%). Cột `region` trong dataset phân loại
-gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `usgs_quality_report.md`.
+gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `data_quality_report.md`.
 
 ## 3. Lý do chọn KAK
 

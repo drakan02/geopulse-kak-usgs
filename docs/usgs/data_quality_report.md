@@ -1,7 +1,7 @@
 # Báo cáo Chất lượng – USGS Earthquake Catalog
 
 > Trạm: KAK region (Japan & lân cận) | Khoảng: 2023-01-01 → 2026-03-31
-> Tạo bởi `clean_catalog.py` ngày 2026-10-04.
+> Tạo bởi `clean_catalog.py` ngày 2026-10-07.
 
 ---
 
@@ -89,7 +89,7 @@
 
 ## 8. Hạn chế
 
-1. **Catalog cập nhật thực tế:** USGS có thể điều chỉnh magnitude sau khi sự kiện xảy ra. Catalog phản ánh trạng thái tại ngày tải (2026-10-04).
+1. **Catalog cập nhật thực tế:** USGS có thể điều chỉnh magnitude sau khi sự kiện xảy ra. Catalog phản ánh trạng thái tại ngày tải (2026-10-07).
 2. **Ngưỡng M4.0:** Đây là lựa chọn của nhóm, không phải toàn bộ động đất. Có thể thiếu các sự kiện nhỏ hơn.
 3. **Dư chấn:** Chuỗi dư chấn sau trận lớn làm lệch phân phối theo thời gian (2024-01, 2025-12).
 4. **8.32% ngoài Nhật Bản:** Bbox hiện tại bao phủ cả Kamchatka/Kuril (7.21%) và Taiwan (0.92%). Cột `region` giúp lọc nếu cần.
@@ -106,33 +106,7 @@
 | Assert n_events_m5plus | sum = 426 ✅ |
 | Ngày 0 sự kiện | 86 (max_mag/dominant_magtype/mean_depth_km = NULL) ✅ |
 | Ngày nhiều nhất | 64 sự kiện |
-| Tạo lúc | 2026-10-04 |
-
-### Top 5 ngày nhiều sự kiện nhất
-
-| Ngày | n_events | max_mag | dominant_magtype |
-|---|---|---|---|
-| 2024-01-01 | 64 | 7.5 | mb |
-| 2025-11-09 | 50 | 6.8 | mb |
-| 2023-10-05 | 42 | 6.1 | mb |
-| 2023-10-06 | 33 | 6.1 | mb |
-| 2023-10-03 | 32 | 6.0 | mb |
-
-> Các ngày đột biến do dư chấn **không bị xoá**. Người dùng Power BI nên
-> nhận biết các ngày này khi diễn giải xu hướng.
-
-## 9. Daily Summary (Giai đoạn 3)
-
-| Thuộc tính | Giá trị |
-|---|---|
-| File | `clean_usgs_JP_M4_daily_20230101_20260331.parquet` |
-| Số ngày (lưới đầy đủ) | 1,186 |
-| Assert n_events | sum = 4,184 ✅ |
-| Assert n_events_japan | sum = 3,836 ✅ |
-| Assert n_events_m5plus | sum = 426 ✅ |
-| Ngày 0 sự kiện | 86 (max_mag/dominant_magtype/mean_depth_km = NULL) ✅ |
-| Ngày nhiều nhất | 64 sự kiện |
-| Tạo lúc | 2026-10-05 |
+| Tạo lúc | 2026-10-07 |
 
 ### Top 5 ngày nhiều sự kiện nhất
 
@@ -148,4 +122,4 @@
 > nhận biết các ngày này khi diễn giải xu hướng.
 
 ---
-*Cập nhật: 2026-10-05*
+*Cập nhật: 2026-10-07*
