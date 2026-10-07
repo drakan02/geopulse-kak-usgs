@@ -3,7 +3,6 @@
 > Trạm: KAK (Đài thiên văn Kakioka, Nhật Bản | 36.232° N, 140.186° E)  
 > Phân loại dữ liệu: quasi-definitive  
 > Khoảng thời gian: 2023-01-01 đến 2026-03-31 (Lưới 1 phút)  
-> Thời điểm tạo báo cáo: 2026-10-07T15:31:31Z UTC  
 
 ---
 

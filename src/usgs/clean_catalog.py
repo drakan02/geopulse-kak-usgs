@@ -338,7 +338,7 @@ def clean_and_export(count_full: int):
     df.to_parquet(out_path, index=False, engine="pyarrow", compression="snappy")
     size_mb = out_path.stat().st_size / 1_048_576
 
-    print(f"\n  💾 Parquet: {out_name}  ({size_mb:.2f} MB)")
+    print(f"\n  Parquet: {out_name}  ({size_mb:.2f} MB)")
     print(f"     {len(df):,} sự kiện × {len(df.columns)} cột")
 
     # ── Thống kê region ──────────────────────────────────────────────────
@@ -361,11 +361,9 @@ def write_docs(df: pd.DataFrame, n_removed: int, count_full: int, n_raw_before_d
 
     # ── data_dictionary.md ───────────────────────────────────────────────
     dd = docs / "data_dictionary.md"
-    now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     dd.write_text(f"""# Từ điển Dữ liệu – USGS Earthquake Catalog
 
-> Thời điểm tạo báo cáo: {now_str} UTC  
 > Nguồn dữ liệu: USGS FDSN Event Web Service (`{cfg.USGS_API_BASE}`)  
 > Vùng địa lý: Lat {cfg.USGS_BBOX['minlatitude']}°N–{cfg.USGS_BBOX['maxlatitude']}°N, Lon {cfg.USGS_BBOX['minlongitude']}°E–{cfg.USGS_BBOX['maxlongitude']}°E (Nhật Bản và phụ cận)  
 > Khoảng thời gian: {cfg.DATE_START} đến {cfg.DATE_END}  
@@ -478,7 +476,6 @@ Ghi chú Kỹ thuật: Các thang đo độ lớn khác nhau về bản chất n
 > Vùng quan sát: Nhật Bản và phụ cận (Vĩ độ 24.0°N–46.0°N, Kinh độ 122.0°E–150.0°E)  
 > Ngưỡng độ lớn: Magnitude M >= {cfg.USGS_MIN_MAG}  
 > Khoảng thời gian: {cfg.DATE_START} đến {cfg.DATE_END}  
-> Thời điểm tạo báo cáo: {now_str} UTC  
 
 ---
 
@@ -626,12 +623,13 @@ bỏ sót 12 ngày cuối quý, thiếu **37 sự kiện**. Giai đoạn 2 sửa
 
 Hộp toạ độ (lat 24–46, lon 122–150) bao gồm ~8.32% sự kiện ngoài Nhật Bản
 (chủ yếu Kamchatka/Kuril 7.2%, Taiwan 0.9%). Cột `region` trong dataset phân loại
-gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `data_quality_report.md`.
+gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `docs/usgs/data_quality_report.md`.
 """
     # Thay phần USGS cũ
     if "## 2. Dữ liệu địa chấn USGS" in text:
         # Cắt từ ## 2. đến ## 3. (hoặc cuối)
         parts = text.split("## 2. Dữ liệu địa chấn USGS")
+        before = parts[0].rstrip()
         after = parts[1]
         # Tìm section tiếp theo
         next_h2 = after.find("\n## ", 5)
@@ -639,12 +637,12 @@ gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `data
             rest = after[next_h2:]
         else:
             rest = ""
-        text = parts[0] + usgs_section + rest
+        text = before + "\n\n" + usgs_section.strip() + "\n" + rest
     else:
-        text += usgs_section
+        text = text.rstrip() + "\n\n" + usgs_section.strip() + "\n"
 
     scope.write_text(text, encoding="utf-8")
-    print(f"  📄 scope.md (đã cập nhật USGS section)")
+    print(f"  scope.md (da cap nhat USGS section)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -663,7 +661,7 @@ def main():
     print(f"  Count API (1 query full)      : {count_full:,}")
     print(f"  Trùng event_id đã xoá        : {n_removed:,}")
     print(f"  Sau dedup                    : {len(df_clean):,}")
-    print(f"  Khớp count vs file           : {'✅' if len(df_clean)==count_full else '⚠️'}")
+    print(f"  Khop count vs file           : {'KHOP' if len(df_clean)==count_full else 'CHENH LECH'}")
     print(f"  File Parquet                 : {out_path.name}")
     print(f"\n  Tài liệu:")
     print(f"    docs/usgs/data_dictionary.md")

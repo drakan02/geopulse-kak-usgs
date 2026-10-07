@@ -39,12 +39,12 @@ def export_parquet(df: pd.DataFrame,
 
     parquet_path = cfg.DATA_CLEAN / f"{stem}.parquet"
     df.to_parquet(parquet_path, index=False, engine="pyarrow")
-    print(f"  💾 Parquet: {parquet_path} ({parquet_path.stat().st_size:,} bytes)")
+    print(f"  Parquet: {parquet_path} ({parquet_path.stat().st_size:,} bytes)")
 
     if also_csv:
         csv_path = cfg.DATA_CLEAN / f"{stem}.csv"
         df.to_csv(csv_path, index=False)
-        print(f"  💾 CSV:     {csv_path} ({csv_path.stat().st_size:,} bytes)")
+        print(f"  CSV:     {csv_path} ({csv_path.stat().st_size:,} bytes)")
 
     return parquet_path
 
@@ -65,7 +65,7 @@ _COLUMN_DOCS = {
         "type": "category",
         "unit": "–",
         "description": "Mã trạm IAGA (3 ký tự)",
-        "valid_values": "PHU, DLT (và các trạm khác nếu bổ sung)",
+        "valid_values": "KAK (và các trạm INTERMAGNET khác nếu bổ sung)",
         "notes": "Nguồn: header IAGA-2002",
     },
     "x_nt": {
@@ -139,19 +139,20 @@ _FLAG_DOCS = [
 def write_data_dictionary(df: pd.DataFrame, meta: dict | None = None) -> Path:
     """
     Viết docs/kak/data_dictionary.md theo chuẩn thiết kế SOP-01 chuyên nghiệp (tiếng Việt, không emoji, số liệu động).
+
+    DEPRECATED: Nguồn chính thức sinh docs/kak/ là src/kak/process.py.
+    Hàm này giữ lại để tương thích ngược với notebook; không gọi từ script mới.
     """
     out_dir = cfg.DOCS_DIR / "kak"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "data_dictionary.md"
     station = (meta.get("station") if meta else None) or "KAK"
-    now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     t_start_s = cfg.DATE_START.strftime("%Y-%m-%d") if hasattr(cfg.DATE_START, 'strftime') else str(cfg.DATE_START)
     t_end_s   = cfg.DATE_END.strftime("%Y-%m-%d") if hasattr(cfg.DATE_END, 'strftime') else str(cfg.DATE_END)
 
     content = f"""# Từ điển Dữ liệu – SOP-01 Geophysical Data Pipeline
 
-> Thời điểm tạo báo cáo: {now_str} UTC  
 > Nguồn dữ liệu: INTERMAGNET HAPI (Trạm KAK - Kakioka, Nhật Bản | 36.232° N, 140.186° E) + Danh mục Động đất USGS  
 > Khoảng thời gian: {t_start_s} đến {t_end_s}  
 
@@ -253,12 +254,15 @@ def write_quality_report(qc_before: dict,
                           meta: dict | None = None) -> Path:
     """
     Viết docs/kak/data_quality_report.md theo chuẩn thiết kế SOP-01 chuyên nghiệp (tiếng Việt, không emoji, số liệu động).
+
+    DEPRECATED: Nguồn chính thức sinh docs/kak/ là src/kak/process.py.
+    Hàm này giữ lại để tương thích ngược với notebook; không gọi từ script mới.
     """
     out_dir = cfg.DOCS_DIR / "kak"
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "data_quality_report.md"
     station  = qc_before.get("station", "KAK")
-    now_str  = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
 
     t_start_s = cfg.DATE_START.strftime("%Y-%m-%d") if hasattr(cfg.DATE_START, 'strftime') else str(cfg.DATE_START)
     t_end_s   = cfg.DATE_END.strftime("%Y-%m-%d") if hasattr(cfg.DATE_END, 'strftime') else str(cfg.DATE_END)
@@ -268,7 +272,6 @@ def write_quality_report(qc_before: dict,
 > Trạm: {station} (Đài thiên văn Kakioka, Nhật Bản | 36.232° N, 140.186° E)  
 > Phân loại dữ liệu: {cfg.DATA_TYPE}  
 > Khoảng thời gian: {t_start_s} đến {t_end_s} (Lưới 1 phút)  
-> Thời điểm tạo báo cáo: {now_str} UTC  
 
 ---
 

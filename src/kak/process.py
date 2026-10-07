@@ -251,7 +251,7 @@ def export_parquet(df: pd.DataFrame, station: str) -> Path:
     out     = cfg.DATA_CLEAN / fname
     df.to_parquet(out, index=False, engine="pyarrow", compression="snappy")
     size_mb = out.stat().st_size / 1_048_576
-    print(f"\n  💾 Parquet: {out.name}  ({size_mb:.1f} MB)")
+    print(f"\n  Parquet: {out.name}  ({size_mb:.1f} MB)")
     return out
 
 
@@ -263,11 +263,9 @@ def export_data_dictionary(station: str):
     out_dir = cfg.DOCS_DIR / "kak"
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / "data_dictionary.md"
-    now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     content = f"""# Từ điển Dữ liệu – SOP-01 Geophysical Data Pipeline
 
-> Thời điểm tạo báo cáo: {now_str} UTC  
 > Nguồn dữ liệu: INTERMAGNET HAPI (Trạm KAK - Kakioka, Nhật Bản | 36.232° N, 140.186° E) + Danh mục Động đất USGS  
 > Khoảng thời gian: {cfg.DATE_START} đến {cfg.DATE_END}  
 
@@ -369,7 +367,6 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
     out   = out_dir / "data_quality_report.md"
     n     = len(df_clean)
     rb    = qc_before["results"]
-    now_str = datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     names = {0:"OK", 1:"INTERP", 2:"MISSING", 3:"SPIKE", 4:"OUT_RANGE", 5:"FLATLINE"}
 
     def pct_str(v): return f"{100*v/n:.4f}%"
@@ -385,7 +382,6 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
 > Trạm: KAK (Đài thiên văn Kakioka, Nhật Bản | 36.232° N, 140.186° E)  
 > Phân loại dữ liệu: {cfg.DATA_TYPE}  
 > Khoảng thời gian: {cfg.DATE_START} đến {cfg.DATE_END} (Lưới 1 phút)  
-> Thời điểm tạo báo cáo: {now_str} UTC  
 
 ---
 
@@ -435,7 +431,7 @@ def export_quality_report(df_clean: pd.DataFrame, qc_before: dict, station: str)
     for r in rb["missing"]:
         col = r["column"]
         n_miss_after = int(df_clean[col].isna().sum())
-        content += f"| `{col}` | {r['sentinel_count']:,} | {r['NaN_tự_nhiên']:,} | {n_miss_after:,} | {pct_str(n_miss_after)} |\n"
+        content += f"| `{col}` | {r['sentinel_count']:,} | {r.get('NaN_tu_nhien', r.get('nan_count', 0)):,} | {n_miss_after:,} | {pct_str(n_miss_after)} |\n"
 
     content += f"""
 ### 3.2 Tính Toàn vẹn Timestamp & Độ Đầy đủ của Lưới
@@ -547,9 +543,15 @@ def main():
     for station in cfg.STATIONS:
         # Nạp kết quả Bước 2 đã lưu
         pkl_path = cfg.DATA_INTERIM / f"qc_before_{station}.pkl"
-        with open(pkl_path, "rb") as f:
-            saved = pickle.load(f)
-        qc_before = saved
+        try:
+            with open(pkl_path, "rb") as f:
+                saved = pickle.load(f)
+            qc_before = saved
+        except FileNotFoundError:
+            print(f"  CANH BAO: Khong tim thay {pkl_path.name}.")
+            print(f"  Hay chay 02_quality.ipynb truoc de tao file pickle QC.")
+            print(f"  Bo qua export_quality_report cho tram {station}.")
+            qc_before = None
 
         # Bước 3: xử lý
         df_clean = step3_process(station)
@@ -563,10 +565,14 @@ def main():
         # Xuất tài liệu
         print(f"\n  Xuất tài liệu...")
         export_data_dictionary(station)
-        export_quality_report(df_clean, qc_before, station)
+        if qc_before is not None:
+            export_quality_report(df_clean, qc_before, station)
+        else:
+            print(f"  Bo qua export_quality_report (khong co pickle qc_before).")
+
 
         # Cập nhật scope.md – thêm note 2026-04
-        print(f"  📄 scope.md (đã cập nhật trước)")
+        print(f"  scope.md (đã cập nhật trước)")
 
         # Thống kê cuối
         n = len(df_clean)

@@ -1,6 +1,5 @@
 # Từ điển Dữ liệu – SOP-01 Geophysical Data Pipeline
 
-> Thời điểm tạo báo cáo: 2026-10-07T15:31:31Z UTC  
 > Nguồn dữ liệu: INTERMAGNET HAPI (Trạm KAK - Kakioka, Nhật Bản | 36.232° N, 140.186° E) + Danh mục Động đất USGS  
 > Khoảng thời gian: 2023-01-01 đến 2026-03-31  
 
