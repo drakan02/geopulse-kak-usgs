@@ -51,14 +51,20 @@ def step2_remove_duplicates(df: pd.DataFrame) -> tuple[pd.DataFrame, int]:
 
 
 def step3_replace_sentinel(df: pd.DataFrame,
-                            sentinel_values: list[float] | None = None) -> pd.DataFrame:
+                            sentinel_values: list[float] | float | None = None) -> pd.DataFrame:
     """Bước 3.3 – Thay sentinel → NaN cho các cột đo lường."""
-    sentinel_values = sentinel_values or cfg.SENTINEL_VALUES
+    if sentinel_values is None:
+        sentinel_list = cfg.SENTINEL_VALUES
+    elif isinstance(sentinel_values, (int, float, np.number)):
+        sentinel_list = [float(sentinel_values)]
+    else:
+        sentinel_list = [float(x) for x in sentinel_values]
+
     df = df.copy()
     meas_cols = [c for c in df.columns if c.endswith("_nt")]
     replaced_total = 0
     for col in meas_cols:
-        mask = df[col].isin(sentinel_values)
+        mask = df[col].isin(sentinel_list)
         n    = int(mask.sum())
         if n:
             df.loc[mask, col] = np.nan
@@ -243,7 +249,7 @@ def run_pipeline(df_raw: pd.DataFrame,
     log["steps"]["7_dtypes"] = {c: str(df[c].dtype) for c in df.columns}
     print(f"  Bước 3.7: Ép kiểu xong")
 
-    print(f"\n  ✅ Pipeline hoàn tất | {station}: {len(df):,} dòng")
+    print(f"\n  Pipeline hoan tat | {station}: {len(df):,} dong")
     return df, log
 
 
@@ -307,4 +313,4 @@ def run_assertions(df: pd.DataFrame,
             )
         print(f"  ✅ Khớp với kỳ vọng từ Bước 2")
 
-    print(f"\n  🎉 Tất cả kiểm chứng ĐẠT | {station}")
+    print(f"\n  Tat ca kiem chung DAT | {station}")

@@ -1,99 +1,123 @@
-# Báo cáo Chất lượng – USGS Earthquake Catalog
+# Báo cáo Chất lượng Dữ liệu – USGS Earthquake Catalog
 
-> Trạm: KAK region (Japan & lân cận) | Khoảng: 2023-01-01 → 2026-03-31
-> Tạo bởi `clean_catalog.py` ngày 2026-10-07.
+> Vùng quan sát: Nhật Bản và phụ cận (Vĩ độ 24.0°N–46.0°N, Kinh độ 122.0°E–150.0°E)  
+> Ngưỡng độ lớn: Magnitude M >= 4.0  
+> Khoảng thời gian: 2023-01-01 đến 2026-03-31  
 
 ---
 
-## 1. Lỗi endtime đã phát hiện và sửa
+## 1. Tóm tắt Thực thi & Hạn chế Dữ liệu
 
-| | Giai đoạn 1 (sai) | Giai đoạn 2 (đã sửa) |
-|---|---|---|
-| Format endtime | `YYYY-MM-DD` | `YYYY-MM-DDTHH:MM:SSZ` |
-| Cách diễn giải | T00:00:00Z (đầu ngày) | Half-open: đầu quý kế |
-| Sự kiện bị bỏ | **37** (12 ngày cuối quý) | 0 |
-| Tổng sự kiện | 4,146 | **4,184** |
+1. Trạng thái Cập nhật USGS Catalog: USGS có thể hiệu chỉnh lại độ lớn (Magnitude) và tọa độ tâm chấn sau khi thu thập thêm dữ liệu trạm. Báo cáo này phản ánh trạng thái dữ liệu tại thời điểm tải về.
+2. Ngưỡng lọc Độ lớn M >= 4.0: Dữ liệu chỉ bao gồm các sự kiện có M >= 4.0 theo cấu hình mục tiêu nghiên cứu; các trận động đất nhỏ hơn M < 4.0 không nằm trong phạm vi catalog này.
+3. Tác động của Chuỗi Dư chấn: Các trận động đất lớn gây ra chuỗi dư chấn kéo dài làm mật độ sự kiện tăng đột biến theo thời gian (đặc biệt là trận động đất bán đảo Noto tháng 01/2024 M7.5 và Aomori tháng 12/2025 M7.6).
+4. Khung Tọa độ Bbox Khu vực: Hộp tọa độ bao phủ vùng biển Nhật Bản có chứa khoảng 8.32% sự kiện nằm ở các khu vực giáp ranh (Kuril/Nga 7.22%, Đài Loan 0.91%). Cột `region` hỗ trợ lọc chính xác theo yêu cầu phân tích.
 
-## 2. Tổng quan sau Giai đoạn 2
+---
 
-| Thuộc tính | Giá trị |
+## 2. Tổng quan Dữ liệu & Thống kê Mô tả
+
+### 2.1 Thuộc tính Dữ liệu Chính
+
+| Thuộc tính | Giá trị định lượng |
 |---|---|
-| Tổng sự kiện (sau dedup) | **4,184** |
-| Count API (1 query liên tục) | **4,184** |
-| Trùng event_id đã xoá | 0 |
-| Khớp count vs file | ✅ KHỚP |
-| Khoảng thực tế | 2023-01-01 21:55:08 → 2026-03-31 15:38:47 |
-| Sự kiện 2026-03-31 | 1 |
+| Tổng số sự kiện sạch (sau khử trùng lặp) | 4,184 sự kiện |
+| Tổng số sự kiện theo truy vấn USGS Count API | 4,184 sự kiện |
+| Số bản ghi trùng lặp `event_id` đã xử lý | 0 bản ghi |
+| Mốc thời gian sự kiện đầu tiên | 2023-01-01 21:55:08 UTC |
+| Mốc thời gian sự kiện cuối cùng | 2026-03-31 15:38:47 UTC |
+| Trạng thái khớp số lượng API vs File | KHỚP HOÀN TOÀN (chênh lệch = 0) |
 
-## 3. Chất lượng dữ liệu
+### 2.2 Thống kê Mô tả Chi tiết (Độ lớn Magnitude & Độ sâu Depth)
 
-| Kiểm tra | Kết quả |
-|---|---|
-| Thiếu event_id | 0 |
-| Thiếu time_utc | 0 |
-| Thiếu mag | 0 |
-| Thiếu depth_km | 0 |
-| Thiếu place | 0 |
-| Ngoài bbox | 0 (đã kiểm tra) |
-| Độ sâu âm | 0 |
-| Mag < 4.0 | 0 |
-
-## 4. Phân phối magnitude
-
-| Dải | Số sự kiện |
-|---|---|
-| 4.0–4.5 | 2,206 |
-| 4.5–5.0 | 1,552 |
-| 5.0–5.5 | 305 |
-| 5.5–6.0 | 86 |
-| 6.0–6.5 | 24 |
-| 6.5–7.0 | 8 |
-| ≥ 7.0 | 3 |
-| **Tổng** | **4,184** |
-
-> M tối đa: 7.6 | Mean: 4.51 | Median: 4.40
-
-## 5. magType
-
-| magType | Số SĐ | % |
+| Chỉ số thống kê | Độ lớn Magnitude (M) | Độ sâu Depth (km) |
 |---|---|---|
-| `mb` | 3,595 | 85.92% |
-| `mww` | 435 | 10.40% |
-| `mwr` | 153 | 3.66% |
-| `mwb` | 1 | 0.02% |
+| Số lượng (Count) | 4,184 | 4,184 |
+| Trung bình (Mean) | 4.51 | 65.64 km |
+| Độ lệch chuẩn (Std Dev) | 0.38 | 100.39 km |
+| Nhỏ nhất (Min) | 4.00 | 2.29 km |
+| Phân vị 25% | 4.30 | 10.00 km |
+| Trung vị (50% Median) | 4.40 | 35.00 km |
+| Phân vị 75% | 4.60 | 64.14 km |
+| Lớn nhất (Max) | 7.60 | 644.88 km |
 
+---
 
-> ⚠️ mb (85.9%) và Mw (mww/mwr/mwb) không so sánh tuyệt đối về năng lượng.
+## 3. Khắc phục Lỗi Truy vấn USGS API (Lỗi Endtime)
 
-## 6. Phân vùng (region – gần đúng)
+| Tiêu chí | Giai đoạn 1 (Truy vấn định dạng cũ) | Giai đoạn 2 (Truy vấn Half-Open đã sửa) | Kết quả kiểm chứng |
+|---|---|---|---|
+| Định dạng tham số `endtime` | `YYYY-MM-DD` | `YYYY-MM-DDTHH:MM:SSZ` | Khắc phục triệt để lỗi mất dữ liệu ngày cuối quý |
+| Diễn giải từ phía API | T00:00:00Z (Đầu ngày) | Nửa mở `[Q_start, Q_next_start)` | Thu thập chính xác toàn bộ 24 giờ ngày cuối |
+| Số ngày bị thiếu dữ liệu | 12 ngày cuối quý bị bỏ qua | 0 ngày bị thiếu | Phục hồi dữ liệu 12 ngày biên |
+| Số sự kiện bị bỏ sót | 37 sự kiện bị bỏ sót | 0 sự kiện bị bỏ sót | Thu hồi đầy đủ 37 sự kiện bị thiếu |
+| Tổng số sự kiện thu thập | 4,146 sự kiện | 4,184 sự kiện | Đạt 100% khớp với USGS API count |
 
-| Vùng | Số SĐ | % |
+---
+
+## 4. Phân phối Độ lớn Magnitude & Thang đo magType
+
+### 4.1 Phân phối Dải Magnitude (M)
+
+| Dải Magnitude | Số lượng sự kiện | Tỷ lệ phần trăm (%) |
 |---|---|---|
-| Japan | 3,836 | 91.68% |
-| Kuril-Russia | 302 | 7.22% |
-| Taiwan | 38 | 0.91% |
-| other | 8 | 0.19% |
+| 4.0 – 4.5 | 2,206 | 52.72% |
+| 4.5 – 5.0 | 1,552 | 37.09% |
+| 5.0 – 5.5 | 305 | 7.29% |
+| 5.5 – 6.0 | 86 | 2.06% |
+| 6.0 – 6.5 | 24 | 0.57% |
+| 6.5 – 7.0 | 8 | 0.19% |
+| >= 7.0 | 3 | 0.07% |
+| Tổng số | 4,184 | 100.00% |
+
+### 4.2 Thang đo magType
+
+| Thang đo `magType` | Số lượng sự kiện | Tỷ lệ phần trăm (%) | Ý nghĩa kỹ thuật |
+|---|---|---|---|
+| `mb` | 3,595 | 85.92% | Thang đo mb theo chuẩn USGS |
+| `mww` | 435 | 10.40% | Thang đo mww theo chuẩn USGS |
+| `mwr` | 153 | 3.66% | Thang đo mwr theo chuẩn USGS |
+| `mwb` | 1 | 0.02% | Thang đo mwb theo chuẩn USGS |
 
 
-> Region được suy từ trường `place` (văn bản tự do). Có thể sai ở biên giới địa lý.
+---
 
-## 7. Tháng đột biến (ngưỡng IQR)
+## 5. Phân vùng Địa lý (Region Breakdown)
 
-| Tháng | Số SĐ | Sự kiện lớn nhất |
-|---|---|---|
-| 2023-10 | 275 | M6.1 mww – Izu Islands |
-| 2024-01 | 204 | **M7.5 mww – 2024 Noto Peninsula Earthquake** |
-| 2025-12 | 195 | **M7.6 mww – 2025 Aomori Prefecture Earthquake** |
+| Mã vùng (Region) | Số lượng sự kiện | Tỷ lệ phần trăm (%) | Mô tả phạm vi |
+|---|---|---|---|
+| Japan | 3,836 | 91.68% | Vùng Japan |
+| Kuril-Russia | 302 | 7.22% | Vùng Kuril-Russia |
+| Taiwan | 38 | 0.91% | Vùng Taiwan |
+| other | 8 | 0.19% | Vùng other |
 
-> Các tháng đột biến không bị xoá. Người dùng cần nhận biết khi phân tích phân phối.
 
-## 8. Hạn chế
+---
 
-1. **Catalog cập nhật thực tế:** USGS có thể điều chỉnh magnitude sau khi sự kiện xảy ra. Catalog phản ánh trạng thái tại ngày tải (2026-10-07).
-2. **Ngưỡng M4.0:** Đây là lựa chọn của nhóm, không phải toàn bộ động đất. Có thể thiếu các sự kiện nhỏ hơn.
-3. **Dư chấn:** Chuỗi dư chấn sau trận lớn làm lệch phân phối theo thời gian (2024-01, 2025-12).
-4. **8.32% ngoài Nhật Bản:** Bbox hiện tại bao phủ cả Kamchatka/Kuril (7.21%) và Taiwan (0.92%). Cột `region` giúp lọc nếu cần.
-5. **magType trộn lẫn:** Không so sánh mb và Mw tuyệt đối. Xem `dominant_magtype` trong daily summary.
+## 6. Phân tích Dữ liệu Chuỗi Ngày & Sự kiện Đột biến (Top Anomaly Days)
+
+Các tháng có mật độ sự kiện tăng đột biến do chuỗi dư chấn sau động đất lớn:
+- Tháng 10/2023: 275 sự kiện (Sự kiện lớn nhất: M6.1 mww – Quần đảo Izu)
+- Tháng 01/2024: 204 sự kiện (Sự kiện lớn nhất: M7.5 mww – Động đất Bán đảo Noto 2024)
+- Tháng 12/2025: 195 sự kiện (Sự kiện lớn nhất: M7.6 mww – Động đất Tỉnh Aomori 2025)
+
+Top 5 Ngày có số lượng động đất cao nhất trong chuỗi thời gian:
+1. 2024-01-01: 64 sự kiện (Max M7.5 mb – Trận động đất Bán đảo Noto 2024)
+2. 2025-11-09: 50 sự kiện (Max M6.8 mb)
+3. 2023-10-05: 42 sự kiện (Max M6.1 mb – Chuỗi động đất Quần đảo Izu)
+4. 2023-10-06: 33 sự kiện (Max M6.1 mb – Chuỗi động đất Quần đảo Izu)
+5. 2023-10-03: 32 sự kiện (Max M6.0 mb – Chuỗi động đất Quần đảo Izu)
+
+---
+
+## 7. Khuyến nghị Sử dụng cho Phân tích Hạ nguồn
+
+- Phân tích Xu hướng Địa chấn: Các ngày và tháng có dư chấn tăng đột biến được bảo toàn nguyên vẹn nhằm phản ánh đúng thực tế di chuyển vỏ trái đất.
+- Lọc Theo Vùng Địa lý: Sử dụng cột `region == 'Japan'` để tập trung phân tích riêng lãnh thổ Nhật Bản (loại bỏ 8.32% sự kiện vùng lân cận Kuril/Đài Loan nếu cần).
+- Tích hợp Mô hình Địa từ: Kết hợp danh mục động đất này với chuỗi từ trường KAK để kiểm chứng mối tương quan giữa sự biến thiên địa từ và các trận động đất M >= 4.0.
+
+---
+*Báo cáo được tạo tự động bởi mô-đun làm sạch danh mục động đất USGS (src/usgs/clean_catalog.py).*
 
 ## 9. Daily Summary (Giai đoạn 3)
 
@@ -101,12 +125,11 @@
 |---|---|
 | File | `clean_usgs_JP_M4_daily_20230101_20260331.parquet` |
 | Số ngày (lưới đầy đủ) | 1,186 |
-| Assert n_events | sum = 4,184 ✅ |
-| Assert n_events_japan | sum = 3,836 ✅ |
-| Assert n_events_m5plus | sum = 426 ✅ |
-| Ngày 0 sự kiện | 86 (max_mag/dominant_magtype/mean_depth_km = NULL) ✅ |
+| Assert n_events | sum = 4,184 (Đạt kiểm chứng) |
+| Assert n_events_japan | sum = 3,836 (Đạt kiểm chứng) |
+| Assert n_events_m5plus | sum = 426 (Đạt kiểm chứng) |
+| Ngày 0 sự kiện | 86 (max_mag/dominant_magtype/mean_depth_km = NULL; Đạt kiểm chứng) |
 | Ngày nhiều nhất | 64 sự kiện |
-| Tạo lúc | 2026-10-07 |
 
 ### Top 5 ngày nhiều sự kiện nhất
 
@@ -121,5 +144,3 @@
 > Các ngày đột biến do dư chấn **không bị xoá**. Người dùng Power BI nên
 > nhận biết các ngày này khi diễn giải xu hướng.
 
----
-*Cập nhật: 2026-10-07*

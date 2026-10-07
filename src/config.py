@@ -2,7 +2,7 @@
 config.py – Cấu hình trung tâm cho toàn bộ Geophysical Data Pipeline.
 Thay đổi các giá trị ở đây thay vì sửa trực tiếp trong các script xử lý.
 
-Phạm vi cấu hình (2026-10-05):
+Phạm vi cấu hình:
   - KAK (INTERMAGNET): Quasi-definitive 1min (2023-01-01 → 2026-03-31)
   - USGS (Earthquake): M ≥ 4.0, lat 24–46°N, lon 122–150°E (2023-01-01 → 2026-03-31)
 """
@@ -18,7 +18,7 @@ DATA_CLEAN     = PROJECT_ROOT / "data" / "clean"
 LOGS_DIR       = PROJECT_ROOT / "logs"
 DOCS_DIR       = PROJECT_ROOT / "docs"
 
-# ── Phạm vi thời gian (xác nhận 2026-10-05) ───────────────────────────────
+# ── Phạm vi thời gian (cố định theo scope.md – đã xác nhận toàn nhóm) ────────────
 DATE_START = date(2023, 1, 1)
 DATE_END   = date(2026, 3, 31)   # Tháng 04/2026 valid 90.00% – chờ xác nhận
 
@@ -39,7 +39,7 @@ INTERMAGNET_HAPI_BASE    = "https://imag-data.bgs.ac.uk/GIN_V1/hapi"
 INTERMAGNET_HAPI_DATASET = "{station_lower}/quasi-def/PT1M/xyzf"
 
 # ── USGS Earthquake catalog ────────────────────────────────────────────────
-# Vùng Nhật Bản và lân cận (xác nhận 2026-10-05, có thể chỉnh sau xem bản đồ)
+# Vùng Nhật Bản và lân cận (có thể chỉnh sau khi xem bản đồ)
 USGS_BBOX = {
     "minlatitude":  24.0,
     "maxlatitude":  46.0,
@@ -55,7 +55,7 @@ USGS_TAG        = "JP"     # tiền tố trong tên file
 
 
 # ── Ngưỡng kiểm tra chất lượng ────────────────────────────────────────────
-# Sentinel HAPI: fill=99999.0 (xác nhận từ HAPI info endpoint, 2026-10-05)
+# Sentinel HAPI: fill=99999.0 (xác nhận từ HAPI info endpoint)
 SENTINEL_VALUES = [99999.0, 88888.0]
 
 # Khoảng vật lý hợp lệ cho từng thành phần (nT)

@@ -92,32 +92,32 @@ def build_daily_summary() -> pd.DataFrame:
 
     # 1. Số dòng = 1,186
     assert len(summary) == N_DAYS_EXPECTED, \
-        f"❌ Số dòng {len(summary)} ≠ {N_DAYS_EXPECTED}"
-    print(f"  ✅ Số dòng = {len(summary):,}")
+        f"[FAIL] Số dòng {len(summary)} ≠ {N_DAYS_EXPECTED}"
+    print(f"  [OK] Số dòng = {len(summary):,}")
 
     # 2. Ngày liên tục, không thiếu
     diffs = summary["date"].diff().dropna()
     gaps  = (diffs != pd.Timedelta("1D")).sum()
-    assert gaps == 0, f"❌ Có {gaps} khoảng không phải 1 ngày"
-    print(f"  ✅ Ngày liên tục, không thiếu (không gap)")
+    assert gaps == 0, f"[FAIL] Có {gaps} khoảng không phải 1 ngày"
+    print(f"  [OK] Ngày liên tục, không thiếu (không gap)")
 
     # 3. sum(n_events) = N_EVENTS_TOTAL
     sum_n = int(summary["n_events"].sum())
     assert sum_n == N_EVENTS_TOTAL, \
-        f"❌ sum(n_events)={sum_n} ≠ {N_EVENTS_TOTAL}"
-    print(f"  ✅ sum(n_events) = {sum_n:,} = N_EVENTS_TOTAL")
+        f"[FAIL] sum(n_events)={sum_n} ≠ {N_EVENTS_TOTAL}"
+    print(f"  [OK] sum(n_events) = {sum_n:,} = N_EVENTS_TOTAL")
 
     # 4. sum(n_events_japan) = N_EVENTS_JAPAN
     sum_jp = int(summary["n_events_japan"].sum())
     assert sum_jp == N_EVENTS_JAPAN, \
-        f"❌ sum(n_events_japan)={sum_jp} ≠ {N_EVENTS_JAPAN}"
-    print(f"  ✅ sum(n_events_japan) = {sum_jp:,} = N_EVENTS_JAPAN")
+        f"[FAIL] sum(n_events_japan)={sum_jp} ≠ {N_EVENTS_JAPAN}"
+    print(f"  [OK] sum(n_events_japan) = {sum_jp:,} = N_EVENTS_JAPAN")
 
     # 5. sum(n_events_m5plus) = N_EVENTS_M5PLUS
     sum_m5 = int(summary["n_events_m5plus"].sum())
     assert sum_m5 == N_EVENTS_M5PLUS, \
-        f"❌ sum(n_events_m5plus)={sum_m5} ≠ {N_EVENTS_M5PLUS}"
-    print(f"  ✅ sum(n_events_m5plus) = {sum_m5:,} = N_EVENTS_M5PLUS")
+        f"[FAIL] sum(n_events_m5plus)={sum_m5} ≠ {N_EVENTS_M5PLUS}"
+    print(f"  [OK] sum(n_events_m5plus) = {sum_m5:,} = N_EVENTS_M5PLUS")
 
     # 6. Ngày có 0 sự kiện: max_mag, mean_depth_km phải NULL
     zero_days   = summary[summary["n_events"] == 0]
@@ -125,12 +125,12 @@ def build_daily_summary() -> pd.DataFrame:
     bad_mag     = zero_days["max_mag"].notna().sum()
     bad_depth   = zero_days["mean_depth_km"].notna().sum()
     bad_magtype = zero_days["dominant_magtype"].notna().sum()
-    assert bad_mag == 0,     f"❌ {bad_mag} ngày 0 sự kiện có max_mag khác NULL"
-    assert bad_depth == 0,   f"❌ {bad_depth} ngày 0 sự kiện có mean_depth_km khác NULL"
-    assert bad_magtype == 0, f"❌ {bad_magtype} ngày 0 sự kiện có dominant_magtype khác NULL"
-    print(f"  ✅ {n_zero_days:,} ngày 0 sự kiện: max_mag / mean_depth_km / dominant_magtype = NULL")
+    assert bad_mag == 0,     f"[FAIL] {bad_mag} ngày 0 sự kiện có max_mag khác NULL"
+    assert bad_depth == 0,   f"[FAIL] {bad_depth} ngày 0 sự kiện có mean_depth_km khác NULL"
+    assert bad_magtype == 0, f"[FAIL] {bad_magtype} ngày 0 sự kiện có dominant_magtype khác NULL"
+    print(f"  [OK] {n_zero_days:,} ngày 0 sự kiện: max_mag / mean_depth_km / dominant_magtype = NULL")
 
-    print(f"\n  ✅ Tất cả assert PASSED")
+    print(f"\n  [OK] Tất cả assert PASSED")
 
     # ── Thống kê ──────────────────────────────────────────────────────────
     print(f"\n── Thống kê daily summary ──")
@@ -172,7 +172,7 @@ def export_parquet(summary: pd.DataFrame):
     CLEAN_DIR.mkdir(parents=True, exist_ok=True)
     summary.to_parquet(OUT_PATH, index=False, engine="pyarrow", compression="snappy")
     size_kb = OUT_PATH.stat().st_size / 1024
-    print(f"\n  💾 Parquet: {OUT_NAME}  ({size_kb:.1f} KB)")
+    print(f"\n   Parquet: {OUT_NAME}  ({size_kb:.1f} KB)")
     print(f"     {len(summary):,} ngày × {len(summary.columns)} cột")
 
 
@@ -180,33 +180,14 @@ def export_parquet(summary: pd.DataFrame):
 def update_data_dictionary(stats: dict):
     """Cập nhật data_dictionary.md: thêm phần daily summary + đánh dấu cột thô."""
     dd_path = DOCS_DIR / "data_dictionary.md"
-    today   = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
     dd_text = dd_path.read_text(encoding="utf-8")
 
-    # Thêm section daily summary vào cuối (trước --- cuối)
+    # Thêm section daily summary vào cuối (trước --- cuối).
+    # Schema 7 cột đã được mô tả đầy đủ ở Section 3 từ clean_catalog.py.
+    # Hàm này chỉ cập nhật bảng thống kê lưới.
     daily_section = f"""
-## File daily summary
-
-`data/clean/clean_usgs_JP_M4_daily_20230101_20260331.parquet`
-
-### Schema cột daily summary
-
-| Cột | Kiểu | Đơn vị | Mô tả | Ngày trống |
-|---|---|---|---|---|
-| `date` | `datetime64[us, UTC]` | – | Ngày UTC (00:00:00Z) | – |
-| `n_events` | `int32` | – | Số sự kiện trong ngày | `0` |
-| `n_events_japan` | `int32` | – | Sự kiện thuộc region=Japan | `0` |
-| `n_events_m5plus` | `int32` | – | Sự kiện M ≥ 5.0 | `0` |
-| `max_mag` | `float32` | – | Magnitude lớn nhất trong ngày | `NULL` |
-| `dominant_magtype` | `object` | – | magType phổ biến nhất (mode) | `NULL` |
-| `mean_depth_km` | `float32` | km | Độ sâu trung bình | `NULL` |
-
-> ⚠️ `max_mag` và `dominant_magtype` trộn nhiều thang đo (mb, mww, mwr…). 
-> Không so sánh tuyệt đối giữa các ngày có `dominant_magtype` khác nhau.
-> Ngày có dư chấn sau trận lớn **không bị xoá**; n_events đột biến là thực tế địa chấn.
-
-### Thông số lưới
+## 7. Thống kê Lưới Daily Summary (cập nhật từ daily_summary.py)
 
 | Thuộc tính | Giá trị |
 |---|---|
@@ -216,45 +197,21 @@ def update_data_dictionary(stats: dict):
 | sum(n_events_m5plus) | {stats['N_M5PLUS']:,} (sự kiện M≥5.0) |
 | Ngày 0 sự kiện | {stats['N_ZERO_DAYS']:,} |
 | Ngày nhiều nhất | {stats['MAX_DAY_EVENTS']} sự kiện |
-| Ngày tải | {today} |
 
-## Cột thô USGS (ít dùng trực tiếp)
-
-Các cột sau được giữ nguyên từ CSV gốc USGS để phục vụ phân tích chuyên sâu.
-Phần lớn không dùng trong dashboard Power BI thông thường:
-
-| Cột | Ghi chú |
-|---|---|
-| `nst` | Số trạm định vị – chỉ số tin cậy vị trí |
-| `gap_deg` | Góc azimuth trạm – chỉ số tin cậy vị trí |
-| `dmin_deg` | Khoảng cách tới trạm gần nhất |
-| `rms` | Residual định vị – chỉ số tin cậy vị trí |
-| `net` | Mạng lưới báo cáo sự kiện (us, pt, …) |
-| `horizontal_error_km` | Sai số ngang định vị |
-| `depth_error_km` | Sai số độ sâu |
-| `mag_error` | Sai số magnitude |
-| `mag_nst` | Số trạm tính magnitude |
-| `location_source` | Mạng lưới cung cấp định vị |
-| `mag_source` | Mạng lưới cung cấp magnitude |
-| `event_type` | Luôn = `earthquake` (đã lọc khi tải; cột hằng số) |
-| `updated_utc` | Timestamp cập nhật cuối – dùng để dedup, không cần cho analysis |
-
----
-*Cập nhật: {today}*
 """
-    # Chèn trước --- cuối cùng hoặc thêm vào cuối
-    marker = "\n---\n*Cập nhật:"
-    if marker in dd_text:
-        dd_text = dd_text[:dd_text.rfind(marker)]
+    # Idempotent: xoá section cũ nếu đã tồn tại để tránh lặp khi chạy nhiều lần
+    section_marker = "\n## 7. Thống kê Lưới Daily Summary"
+    if section_marker in dd_text:
+        dd_text = dd_text[:dd_text.index(section_marker)]
     dd_path.write_text(dd_text + daily_section, encoding="utf-8")
-    print(f"  📄 data_dictionary.md (cập nhật)")
+    print(f"  data_dictionary.md (cap nhat thong ke luoi daily summary)")
+
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 def update_quality_report(stats: dict):
     """Thêm section daily summary vào data_quality_report.md."""
     qr_path = DOCS_DIR / "data_quality_report.md"
-    today   = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
 
     top5_rows = "\n".join(
         f"| {str(pd.Timestamp(r['date']).date())} | {int(r['n_events']):,} | "
@@ -269,12 +226,11 @@ def update_quality_report(stats: dict):
 |---|---|
 | File | `{OUT_NAME}` |
 | Số ngày (lưới đầy đủ) | {stats['N_DAYS']:,} |
-| Assert n_events | sum = {stats['N_EVENTS']:,} ✅ |
-| Assert n_events_japan | sum = {stats['N_JAPAN']:,} ✅ |
-| Assert n_events_m5plus | sum = {stats['N_M5PLUS']:,} ✅ |
-| Ngày 0 sự kiện | {stats['N_ZERO_DAYS']:,} (max_mag/dominant_magtype/mean_depth_km = NULL) ✅ |
+| Assert n_events | sum = {stats['N_EVENTS']:,} (Đạt kiểm chứng) |
+| Assert n_events_japan | sum = {stats['N_JAPAN']:,} (Đạt kiểm chứng) |
+| Assert n_events_m5plus | sum = {stats['N_M5PLUS']:,} (Đạt kiểm chứng) |
+| Ngày 0 sự kiện | {stats['N_ZERO_DAYS']:,} (max_mag/dominant_magtype/mean_depth_km = NULL; Đạt kiểm chứng) |
 | Ngày nhiều nhất | {stats['MAX_DAY_EVENTS']:,} sự kiện |
-| Tạo lúc | {today} |
 
 ### Top 5 ngày nhiều sự kiện nhất
 
@@ -285,16 +241,14 @@ def update_quality_report(stats: dict):
 > Các ngày đột biến do dư chấn **không bị xoá**. Người dùng Power BI nên
 > nhận biết các ngày này khi diễn giải xu hướng.
 
----
-*Cập nhật: {today}*
 """
     text = qr_path.read_text(encoding="utf-8")
-    # Bỏ --- cuối cũ rồi thêm section mới
-    marker = "\n---\n*Cập nhật:"
-    if marker in text:
-        text = text[:text.rfind(marker)]
-    qr_path.write_text(text + section, encoding="utf-8")
-    print(f"  📄 data_quality_report.md (cập nhật)")
+    # Idempotent: xoá section cũ nếu đã tồn tại để tránh lặp khi chạy nhiều lần
+    section_marker = "\n## 9. Daily Summary"
+    if section_marker in text:
+        text = text[:text.index(section_marker)]
+    qr_path.write_text(text.rstrip() + "\n" + section, encoding="utf-8")
+    print(f"   data_quality_report.md (cập nhật)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -312,7 +266,7 @@ def update_scope(stats: dict):
     if "Bảng daily summary" not in text:
         text += note
         scope.write_text(text, encoding="utf-8")
-    print(f"  📄 scope.md (thêm daily summary)")
+    print(f"   scope.md (thêm daily summary)")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -330,9 +284,9 @@ def main():
     print(f"{'='*65}")
     print(f"  File: {OUT_NAME}")
     print(f"  Số ngày lưới  : {stats['N_DAYS']:,}")
-    print(f"  sum(n_events) : {stats['N_EVENTS']:,}  ✅")
-    print(f"  sum(jp)       : {stats['N_JAPAN']:,}  ✅")
-    print(f"  sum(m5+)      : {stats['N_M5PLUS']:,}  ✅")
+    print(f"  sum(n_events) : {stats['N_EVENTS']:,}  [OK]")
+    print(f"  sum(jp)       : {stats['N_JAPAN']:,}  [OK]")
+    print(f"  sum(m5+)      : {stats['N_M5PLUS']:,}  [OK]")
     print(f"  Ngày 0 SĐ     : {stats['N_ZERO_DAYS']:,}")
     print(f"  Ngày nhiều nhất: {stats['MAX_DAY_EVENTS']:,} SĐ")
     print(f"\n→ DỪNG. Chờ xác nhận.")

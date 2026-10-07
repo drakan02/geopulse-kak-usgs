@@ -28,9 +28,6 @@
   - Nhóm ưu tiên tính đồng nhất 100% valid trên toàn chuỗi hơn việc thêm 1 tháng bất hoàn chỉnh.
 - Ghi chú vào `docs/kak/data_dictionary.md` và `docs/kak/data_quality_report.md`.
 
-
-
-
 ## 2. Dữ liệu địa chấn USGS (đã cập nhật)
 
 | Thuộc tính | Giá trị |
@@ -57,7 +54,7 @@ bỏ sót 12 ngày cuối quý, thiếu **37 sự kiện**. Giai đoạn 2 sửa
 
 Hộp toạ độ (lat 24–46, lon 122–150) bao gồm ~8.32% sự kiện ngoài Nhật Bản
 (chủ yếu Kamchatka/Kuril 7.2%, Taiwan 0.9%). Cột `region` trong dataset phân loại
-gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `data_quality_report.md`.
+gần đúng từ trường `place`. Bbox không thay đổi — xem thêm `docs/usgs/data_quality_report.md`.
 
 ## 3. Lý do chọn KAK
 

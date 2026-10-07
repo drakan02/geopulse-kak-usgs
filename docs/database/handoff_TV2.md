@@ -22,7 +22,7 @@ Tất cả file trong thư mục `data/clean/`.
 **Khoảng:** 2023-01-01T00:00Z → 2026-03-31T23:59Z  
 **SHA-256:** `b1c73b49cab713ebeb5a8de3366f761fe07ddb6d8cca6ded4440acb6dbdbc11f`
 
-> ⚠️ **LƯU Ý QUAN TRỌNG VỀ LƯỚI THỜI GIAN:**
+> [Canh bao] **LƯU Ý QUAN TRỌNG VỀ LƯỚI THỜI GIAN:**
 > Phải **GIỮ ĐỦ 1,707,840 DÒNG**, **KHÔNG ĐƯỢC LỌC/XOÁ DÒNG** (chuỗi thời gian địa từ yêu cầu lưới thời gian 1 phút đều đặn). 
 
 ### Schema
@@ -45,7 +45,7 @@ Tất cả file trong thư mục `data/clean/`.
 
 | Mã | Tên | Điều kiện | Trạng thái trong dataset KAK |
 |---|---|---|---|
-| `0` | OK | Giá trị gốc hợp lệ | 1,690,346 điểm (98.98%) – ✅ Sử dụng trực tiếp |
+| `0` | OK | Giá trị gốc hợp lệ | 1,690,346 điểm (98.98%) – [Dat] Sử dụng trực tiếp |
 | `1` | INTERP | Giá trị nội suy (gap ≤ 5 phút) | **0 điểm** (không có gap ngắn) |
 | `2` | MISSING | Thiếu dữ liệu / Fill 99999 | **0 điểm** (không có missing/sentinel) |
 | `3` | SPIKE | \|diff\| > 5σ | 15,082 điểm (0.88%) – **GIỮ NGUYÊN DÒNG** |
@@ -55,7 +55,7 @@ Tất cả file trong thư mục `data/clean/`.
 > **Thứ tự ưu tiên cờ:** flatline (5) > out-of-range (4) > spike (3) > missing/sentinel (2) > interp (1) > OK (0)  
 > `quality_flag = max(flag_x, flag_y, flag_z, flag_f)`
 
-### ⚠️ Cảnh báo quan trọng
+### [Canh bao] Cảnh báo quan trọng
 
 - **Giữ nguyên 100% số dòng dữ liệu (1,707,840 dòng):** Không xóa bất kỳ dòng nào để đảm bảo tính liên tục của lưới thời gian 1 phút.
 - **Spike (cờ 3) KHÔNG bị xoá.** Một phần có thể là biến thiên địa từ thật trong bão từ địa vật lý. Cần phân tích trước khi quyết định xử lý.
@@ -108,7 +108,7 @@ Tất cả file trong thư mục `data/clean/`.
 | `Taiwan` | 38 | 0.91% | taiwan |
 | `other` | 8 | 0.19% | không khớp |
 
-### ⚠️ Cảnh báo quan trọng
+### [Canh bao] Cảnh báo quan trọng
 
 - **magType trộn:** mb (85.9%), mww (10.4%), mwr (3.7%), mwb (0.02%). **mb ≠ Mw** về năng lượng — không so sánh tuyệt đối `max_mag` giữa các ngày có `dominant_magtype` khác nhau.
 - **region là phân loại gần đúng** từ văn bản tự do. Không dùng cho phân tích địa lý chính xác.
@@ -138,12 +138,12 @@ Tất cả file trong thư mục `data/clean/`.
 
 | Assert | Kết quả |
 |---|---|
-| Số ngày lưới = 1,186 | ✅ |
-| Ngày liên tục, không gap | ✅ |
-| sum(n_events) = 4,184 | ✅ |
-| sum(n_events_japan) = 3,836 | ✅ |
-| sum(n_events_m5plus) = 426 | ✅ |
-| 86 ngày trống: max_mag / dominant_magtype / mean_depth_km = NULL | ✅ |
+| Số ngày lưới = 1,186 | [Dat] |
+| Ngày liên tục, không gap | [Dat] |
+| sum(n_events) = 4,184 | [Dat] |
+| sum(n_events_japan) = 3,836 | [Dat] |
+| sum(n_events_m5plus) = 426 | [Dat] |
+| 86 ngày trống: max_mag / dominant_magtype / mean_depth_km = NULL | [Dat] |
 
 ### Thống kê nhanh
 

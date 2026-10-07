@@ -32,21 +32,27 @@ def _meas_cols(df: pd.DataFrame) -> list[str]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def check_missing(df: pd.DataFrame,
-                  sentinel_values: list[float] | None = None) -> pd.DataFrame:
+                  sentinel_values: list[float] | float | None = None) -> pd.DataFrame:
     """
     Đếm NaN và sentinel cho từng cột đo lường.
 
     Trả DataFrame:
       column | nan_count | sentinel_count | total_missing | missing_pct
     """
-    sentinel_values = sentinel_values or cfg.SENTINEL_VALUES
+    if sentinel_values is None:
+        sentinel_list = cfg.SENTINEL_VALUES
+    elif isinstance(sentinel_values, (int, float, np.number)):
+        sentinel_list = [float(sentinel_values)]
+    else:
+        sentinel_list = [float(x) for x in sentinel_values]
+
     rows = []
     n = len(df)
     for col in _meas_cols(df):
         nan_cnt = int(df[col].isna().sum())
         # Sentinel: chỉ đếm trong ô không phải NaN
         not_null = df[col].dropna()
-        sent_cnt = int(not_null.isin(sentinel_values).sum())
+        sent_cnt = int(not_null.isin(sentinel_list).sum())
         total    = nan_cnt + sent_cnt
         rows.append({
             "column":         col,
