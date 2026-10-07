@@ -82,8 +82,9 @@ geopulse-kak-usgs/
 ├── logs/                     # Nhật ký hệ thống & lịch sử tải
 │   ├── download_log.csv      # Log tải KAK (SHA256, File Size, URL)
 │   └── usgs_download_log.csv # Log tải USGS theo quý half-open
-├── .venv/                    # Môi trường ảo Python
-├── requirements.txt          # Danh sách thư viện phụ thuộc
+├── pyproject.toml            # Cấu hình dự án & dependencies cho uv
+├── uv.lock                   # Lockfile phiên bản thư viện cố định của uv
+├── .venv/                    # Môi trường ảo Python quản lý bởi uv
 └── README.md                 # Tài liệu hướng dẫn trung tâm
 ```
 
@@ -91,14 +92,14 @@ geopulse-kak-usgs/
 
 ## ⚡ Hướng dẫn Cài đặt & Vận hành
 
-### 1. Khởi tạo Môi trường
+### 1. Khởi tạo & Kích hoạt Môi trường
 
 ```bash
-# Kích hoạt môi trường ảo Python
-source .venv/bin/activate
+# Khởi tạo môi trường ảo và tự động cài đặt thư viện theo uv.lock
+uv sync
 
-# Cài đặt các thư viện phụ thuộc
-pip install -r requirements.txt
+# Kích hoạt môi trường ảo
+source .venv/bin/activate
 ```
 
 ### 2. Thu thập Dữ liệu Thô (Data Ingestion)
@@ -133,6 +134,9 @@ python src/kak/explore.py
 # Chạy phân tích & điều tra catalog USGS
 python src/usgs/analyze.py
 python src/usgs/investigate.py
+
+# Mở Jupyter Lab / Notebook khảo sát
+jupyter lab
 ```
 
 ---
