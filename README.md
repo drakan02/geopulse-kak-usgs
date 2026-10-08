@@ -190,3 +190,14 @@ Toàn bộ tham số vận hành được quản lý tập trung tại [src/conf
 3. **Cơ sở Dữ liệu & Bàn giao (Database & Handoff)**:
    - [PostgreSQL Schema DDL](docs/database/postgres_schema.sql): Kịch bản SQL tạo bảng, phân vùng theo tháng (Table Partitioning), đánh chỉ mục (Indexes) và tạo Views phục vụ TV2/Power BI.
    - [Handoff TV2 Guide](docs/database/handoff_TV2.md): Hướng dẫn bàn giao kỹ thuật chi tiết cho nhóm Cơ sở dữ liệu và Phân tích.
+
+
+## CV2 — Database và Data Modelling
+
+Phần triển khai CV2 nằm trong [database/](database/README.md), nhận nguyên ba
+file clean của CV1. Bắt đầu bằng [hướng dẫn sử dụng](database/USAGE.md),
+[ERD](database/ERD.md), [từ điển dữ liệu](database/DATA_DICTIONARY.md) và
+[báo cáo kỹ thuật](database/CV2_REPORT.md). Có [hợp đồng CV3/CV4](database/HANDOFF.md)
+và [bằng chứng kiểm thử](database/evidence/README.md).
+Windows native đã kiểm thử; cấu hình Docker chưa kiểm thử end-to-end.
+Mật khẩu và database cục bộ không được đưa lên GitHub.
