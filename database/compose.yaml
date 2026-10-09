@@ -1,0 +1,40 @@
+name: geopulse-cv2
+services:
+  db:
+    image: ${TIMESCALE_IMAGE:-timescale/timescaledb:2.30.2-pg17}
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-geopulse}
+      POSTGRES_USER: ${POSTGRES_USER:-geopulse}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Create database/.env first}
+      TIMESCALEDB_TELEMETRY: "off"
+      NO_TS_TUNE: "true"
+    command: ["postgres", "-c", "shared_preload_libraries=timescaledb", "-c", "timezone=UTC", "-c", "shared_buffers=256MB", "-c", "work_mem=16MB"]
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - geopulse_data:/var/lib/postgresql/data
+    shm_size: 256mb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    restart: unless-stopped
+  tools:
+    build: .
+    profiles: ["tools"]
+    environment:
+      PGHOST: db
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:-geopulse}
+      PGUSER: ${POSTGRES_USER:-geopulse}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Create database/.env first}
+      PG_READER_PASSWORD: ${PG_READER_PASSWORD:-}
+    volumes:
+      - ../data:/data:ro
+      - ./reports:/reports
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  geopulse_data:

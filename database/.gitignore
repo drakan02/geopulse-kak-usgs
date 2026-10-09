@@ -1,0 +1,7 @@
+.env
+reports/*.json
+reports/*.csv
+reports/*.md
+!reports/README.md
+__pycache__/
+.local/
