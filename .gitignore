@@ -29,3 +29,5 @@ build/
 *.swp
 .DS_Store
 SOP-01.md
+
+.venv-cv3/
