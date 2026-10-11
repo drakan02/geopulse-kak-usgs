@@ -1,0 +1,110 @@
+{
+  "checked_at": "2026-10-07 14:58:32.586127+00:00",
+  "files": {
+    "kak_clean": {
+      "filename": "clean_intermagnet_KAK_1min_20230101_20260331.parquet",
+      "rows": 1707840,
+      "sha256": "b1c73b49cab713ebeb5a8de3366f761fe07ddb6d8cca6ded4440acb6dbdbc11f",
+      "bytes": 21966605,
+      "columns": {
+        "time_utc": "timestamp[us, tz=UTC]",
+        "station": "dictionary<values=string, indices=int8, ordered=0>",
+        "x_nt": "float",
+        "y_nt": "float",
+        "z_nt": "float",
+        "f_nt": "float",
+        "flag_x": "int8",
+        "flag_y": "int8",
+        "flag_z": "int8",
+        "flag_f": "int8",
+        "quality_flag": "int8"
+      }
+    },
+    "usgs_clean": {
+      "filename": "clean_usgs_JP_M4_20230101_20260331.parquet",
+      "rows": 4184,
+      "sha256": "a02c8d5b326c585c3e0655626b0f3955cab9987ea69773b0452759274d28c712",
+      "bytes": 278950,
+      "columns": {
+        "event_id": "large_string",
+        "time_utc": "timestamp[us, tz=UTC]",
+        "updated_utc": "timestamp[us, tz=UTC]",
+        "latitude": "float",
+        "longitude": "float",
+        "depth_km": "float",
+        "mag": "float",
+        "mag_type": "dictionary<values=string, indices=int8, ordered=0>",
+        "place": "large_string",
+        "event_type": "dictionary<values=string, indices=int8, ordered=0>",
+        "status": "dictionary<values=string, indices=int8, ordered=0>",
+        "nst": "int64",
+        "gap_deg": "int64",
+        "dmin_deg": "double",
+        "rms": "double",
+        "net": "large_string",
+        "horizontal_error_km": "double",
+        "depth_error_km": "double",
+        "mag_error": "double",
+        "mag_nst": "int64",
+        "location_source": "large_string",
+        "mag_source": "large_string",
+        "region": "dictionary<values=string, indices=int8, ordered=0>"
+      }
+    },
+    "usgs_daily_clean": {
+      "filename": "clean_usgs_JP_M4_daily_20230101_20260331.parquet",
+      "rows": 1186,
+      "sha256": "2b2ef30842604d5817887dc969532c9f4687b39dd5db6ecee860d4d4bc149e22",
+      "bytes": 23719,
+      "columns": {
+        "date": "timestamp[us, tz=UTC]",
+        "n_events": "int32",
+        "n_events_japan": "int32",
+        "n_events_m5plus": "int32",
+        "max_mag": "float",
+        "dominant_magtype": "string",
+        "mean_depth_km": "float"
+      }
+    }
+  },
+  "checks": [
+    "all input rows checked",
+    "UTC and continuous grids",
+    "flags preserved",
+    "unique event IDs",
+    "event/day counts, magnitude and depth reconciled"
+  ],
+  "kak_row_flags": {
+    "0": 1690346,
+    "3": 15082,
+    "5": 2412
+  },
+  "kak_channel_flags": {
+    "X": {
+      "0": 1700206,
+      "3": 7603,
+      "5": 31
+    },
+    "Y": {
+      "0": 1700047,
+      "3": 7762,
+      "5": 31
+    },
+    "Z": {
+      "0": 1697400,
+      "3": 8392,
+      "5": 2048
+    },
+    "F": {
+      "0": 1699504,
+      "3": 7970,
+      "5": 366
+    }
+  },
+  "expected_measurements": 6831360,
+  "daily_totals": {
+    "n_events": 4184,
+    "n_events_japan": 3836,
+    "n_events_m5plus": 426
+  }
+}

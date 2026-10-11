@@ -1,0 +1,25 @@
+{
+  "verified_at": "2026-10-08 10:04:07.016599+00:00",
+  "checks": [
+    "all Parquet values and flags roundtripped exactly",
+    "row counts and flags conserved",
+    "event/day reconciliation",
+    "continuous aggregates conserve counts",
+    "archive bytes and SHA256 preserved",
+    "Timescale hypertables exist"
+  ],
+  "counts": {
+    "clean.measurement": 6831360,
+    "clean.earthquake_event": 4184,
+    "clean.earthquake_daily": 1186,
+    "analytics.measurement_hourly": 113856,
+    "analytics.measurement_daily": 4744
+  },
+  "full_roundtrip": true,
+  "hypertables": [
+    "analytics.filtered_series",
+    "analytics.forecast_result",
+    "clean.measurement"
+  ],
+  "original_raw_files": 0
+}

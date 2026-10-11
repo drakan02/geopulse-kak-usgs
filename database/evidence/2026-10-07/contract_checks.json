@@ -1,0 +1,16 @@
+{
+  "checked_at": "2026-10-07 15:11:05.119769+00:00",
+  "passed": true,
+  "checks": [
+    "archive rejects UPDATE and DELETE",
+    "spike values preserved; strict view returns NULL",
+    "measurement keys prevent duplicates",
+    "missing values must be NULL",
+    "combined flag cannot be lower than channel flag",
+    "unknown channel rejected",
+    "filtered result must match model_run channel",
+    "filter run cannot store a forecast",
+    "all fixtures rolled back",
+    "reader can read Analytics but cannot write Clean or read Raw"
+  ]
+}

@@ -1,3 +1,49 @@
+# GeoPulse — CV2: Database và Data Modelling
+
+CV2 nhận ba file dữ liệu đã làm sạch từ CV1, xây dựng database **PostgreSQL +
+TimescaleDB**, lưu trữ theo ba tầng **Raw / Clean / Analytics** và cung cấp dữ
+liệu cho CV3, CV4 cùng dashboard Power BI.
+
+## Tài liệu CV2
+
+| Tài liệu | Nội dung |
+|---|---|
+| **[README CV2](database/README.md)** | Tổng quan cấu trúc, đầu ra và các công cụ |
+| **[Hướng dẫn sử dụng](database/USAGE.md)** | Dựng mới, bật/tắt, mở pgAdmin, kết nối Power BI, Docker và xử lý lỗi |
+| **[ERD](database/ERD.md)** | Sơ đồ 12 bảng, các thuộc tính, khóa và quan hệ |
+| **[Từ điển dữ liệu](database/DATA_DICTIONARY.md)** | 97 cột của các bảng: kiểu, NULL, khóa và ý nghĩa; thêm mô tả view/aggregate |
+| **[Báo cáo kỹ thuật](database/CV2_REPORT.md)** | Lý do thiết kế, ánh xạ CV1, index, tổ chức thời gian, kiểm chứng và hiệu năng |
+| **[Bàn giao CV3/CV4](database/HANDOFF.md)** | Đọc dữ liệu nào, tạo lần chạy và ghi kết quả vào đâu |
+| **[Bằng chứng kiểm thử](database/evidence/README.md)** | Kết quả đối chiếu dữ liệu, kiểm tra ràng buộc/quyền và benchmark |
+| [DDL và truy vấn](database/sql/) | Script tạo bảng, TimescaleDB, index, view và truy vấn mẫu |
+
+## Bắt đầu sử dụng
+
+1. Đọc [hướng dẫn sử dụng](database/USAGE.md), chọn Windows native hoặc Docker.
+2. Dựng database và nhập ba file có sẵn trong `data/clean/` nếu đây là máy mới.
+3. Mở pgAdmin, kết nối database `geopulse` tại `127.0.0.1:5433`.
+4. Xem `clean.kak_1min`, `clean.earthquake_event`, `clean.earthquake_daily` hoặc các view `analytics`.
+
+Mỗi máy có database và mật khẩu riêng. `credentials.json`, `.env`, dữ liệu
+PostgreSQL cục bộ và Docker volume không được đưa lên GitHub.
+
+## Trạng thái bàn giao
+
+- Windows native đã chạy và kiểm chứng với PostgreSQL **17.11**, TimescaleDB **2.30.2**.
+- Có **6.831.360** số đo, **4.184** sự kiện động đất, **1.186** ngày thống kê.
+- Đối chiếu toàn bộ giá trị/cờ với CV1 và kiểm tra ràng buộc/quyền đã đạt.
+- Docker có cấu hình, **chưa kiểm thử end-to-end**.
+- File raw gốc còn chờ CV1; ba file clean được lưu đúng nhãn `clean_handoff`.
+- Bảng lọc/dự báo đã chuẩn bị, chưa có kết quả thực tế của CV3/CV4.
+
+## Nội dung CV1
+
+Tài liệu pipeline và xử lý dữ liệu CV1 được giữ bên dưới; tài liệu đầu vào
+cho CV2 nằm tại [Handoff TV2](docs/database/handoff_TV2.md).
+
+<details>
+<summary>Mở README CV1: pipeline làm sạch KAK và USGS</summary>
+
 # 🌍 GeoPulse Data Pipeline – KAK & USGS Processing System
 
 Pipeline tự động hóa làm sạch, kiểm chứng chất lượng (Data Quality Control - QC) và tổng hợp dữ liệu địa vật lý đa nguồn (**địa từ trạm KAK - INTERMAGNET** và **động đất khu vực Nhật Bản - USGS**).
@@ -190,3 +236,5 @@ Toàn bộ tham số vận hành được quản lý tập trung tại [src/conf
 3. **Cơ sở Dữ liệu & Bàn giao (Database & Handoff)**:
    - [PostgreSQL Schema DDL](docs/database/postgres_schema.sql): Kịch bản SQL tạo bảng, phân vùng theo tháng (Table Partitioning), đánh chỉ mục (Indexes) và tạo Views phục vụ TV2/Power BI.
    - [Handoff TV2 Guide](docs/database/handoff_TV2.md): Hướng dẫn bàn giao kỹ thuật chi tiết cho nhóm Cơ sở dữ liệu và Phân tích.
+
+</details>
