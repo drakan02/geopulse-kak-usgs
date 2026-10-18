@@ -425,3 +425,51 @@ GROUP BY
 ORDER BY
     start_time,
     r.method;
+
+-- Tương quan biến thiên từ trường KAK và động đất USGS
+WITH daily_data AS (
+    SELECT
+        bucket_utc,
+        channel_code,
+        max_value - min_value AS magnetic_range,
+
+        ABS(
+            mean_value - LAG(mean_value) OVER (
+                PARTITION BY station_code, channel_code
+                ORDER BY bucket_utc
+            )
+        ) AS magnetic_change,
+
+        n_events,
+        n_events_japan,
+        n_events_m5plus,
+        max_mag
+
+    FROM analytics.vw_daily_context
+
+    WHERE station_code = 'KAK'
+)
+
+SELECT
+    channel_code,
+
+    CORR(magnetic_change, n_events)
+        AS corr_change_events,
+
+    CORR(magnetic_change, n_events_japan)
+        AS corr_change_japan,
+
+    CORR(magnetic_change, n_events_m5plus)
+        AS corr_change_m5plus,
+
+    CORR(magnetic_change, max_mag)
+        AS corr_change_max_mag,
+
+    CORR(magnetic_range, n_events)
+        AS corr_range_events
+
+FROM daily_data
+
+GROUP BY channel_code
+
+ORDER BY channel_code;
